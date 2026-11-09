@@ -25,7 +25,7 @@ npm run preview
 
 ## Connect Supabase
 
-1. Create a Supabase project. In its SQL Editor, run the [catalog migration](supabase/migrations/20261110000100_catalog.sql) once. It creates the catalog, access policies, admin allowlist, and `part-images` storage bucket.
+1. Create a Supabase project with **Enable Data API** on and **Automatically expose new tables** off. In its SQL Editor, run the [catalog migration](supabase/migrations/20261110000100_catalog.sql) once. It creates the catalog, access policies, admin allowlist, and `part-images` storage bucket. The migration grants the specific Data API permissions the app uses.
 2. Keep the Email provider enabled and disable **Allow new users to sign up** and **Allow anonymous sign-ins** in the project's Authentication configuration. Storefront visitors can browse published listings without an Auth account. [Supabase Auth configuration](https://supabase.com/docs/guides/auth/general-configuration)
 3. In **Authentication → Users**, create the owner's account with an email and password. Confirm the email for that account and copy its User UID.
 4. Grant that user catalog access in the SQL Editor by replacing the example UUID with the copied User UID.
@@ -37,7 +37,7 @@ npm run preview
    ```
 
 5. Copy [`.env.example`](.env.example) to `.env.local` and fill in both Supabase settings. Get the project URL and publishable key from the project's **Connect** dialog. Use the `sb_publishable_...` key. Keep Supabase secret keys and legacy `service_role` keys out of the browser and all `VITE_` variables. [Supabase API keys](https://supabase.com/docs/guides/getting-started/api-keys)
-6. Restart the dev server. Open `/#admin`, sign in with the owner account, add a part, and publish it. Check the storefront in a private browser window to verify customer access.
+6. Restart the dev server. Open `/#admin`, sign in with the owner account, add a part, and publish it. Check the storefront in a private browser window to verify customer access. You can connect and deploy the empty storefront before creating the owner account if you are waiting for their email address.
 
 Supabase enforces access in the database. Only accounts on the allowlist can read drafts and change inventory or upload photos. Published rows expose their catalog details, including stock quantity. Product image URLs can be opened by anyone with the exact URL, including URLs for photos uploaded to drafts. Use the bucket for product photos suitable for public viewing. [Supabase Storage buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals)
 
