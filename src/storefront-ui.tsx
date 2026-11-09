@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { ArrowUpRight, Mail, MessageCircle, PackageOpen, Phone } from 'lucide-react';
+import { ArrowUpRight, Mail, MapPin, MessageCircle, PackageOpen, Phone } from 'lucide-react';
 import type { Part } from './catalog';
 import { stockStatus } from './catalog';
-import { imageUrl } from './repository';
+import { imageUrl, type StoreContact } from './repository';
 
-const phone: string | undefined = import.meta.env.VITE_STORE_PHONE?.trim();
 const email: string | undefined = import.meta.env.VITE_STORE_EMAIL?.trim();
 const whatsapp: string | undefined = import.meta.env.VITE_STORE_WHATSAPP?.replace(/\D/g, '');
-export const hasContact = Boolean(phone || email || whatsapp);
+export const hasContact = (contact: StoreContact) => Boolean(contact.phone || contact.address || contact.map_url || email || whatsapp);
 
 export function Brand() {
   return <a className="brand" href="#" aria-label="ნაწილები — მთავარი">
@@ -16,21 +15,26 @@ export function Brand() {
   </a>;
 }
 
-export function ContactLinks({ part }: { part?: Part }) {
+export function ContactLinks({ contact, part }: { contact: StoreContact; part?: Part }) {
+  const { phone, address, map_url } = contact;
+  const mapLink = map_url?.startsWith('https://') ? map_url : address
+    ? `https://www.google.com/maps/search/?${new URLSearchParams({ api: '1', query: address })}`
+    : null;
   const note = part ? `გამარჯობა, მაინტერესებს ${part.name}.\n${window.location.href}` : 'გამარჯობა, მაინტერესებს ავტონაწილი.';
   return <div className="contact-links">
     {whatsapp && <a href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(note)}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> WhatsApp <ArrowUpRight size={14} /></a>}
     {phone && <a href={`tel:${phone.replace(/[^+\d]/g, '')}`}><Phone size={16} /> {phone}</a>}
+    {mapLink && <a href={mapLink} target="_blank" rel="noopener noreferrer"><MapPin size={17} /><span>{address || 'რუკაზე ნახვა'}</span><ArrowUpRight size={14} /></a>}
     {email && <a href={`mailto:${email}?subject=${encodeURIComponent(part?.name ?? 'ავტონაწილები')}&body=${encodeURIComponent(note)}`}><Mail size={17} /> ელფოსტა</a>}
   </div>;
 }
 
-export function StoreFooter() {
+export function StoreFooter({ contact }: { contact: StoreContact }) {
   return <footer className="site-footer" id="contact">
     <div className="shell footer-inner">
       <div><Brand /><p>მოძებნე ნაწილი და გადაამოწმე მარაგი.</p></div>
       <div className="footer-links">
-        {hasContact && <ContactLinks />}
+        {hasContact(contact) && <ContactLinks contact={contact} />}
         <a href="#catalog">კატალოგი</a>
         <a href="#admin">ადმინისტრაცია <ArrowUpRight size={15} /></a>
       </div>

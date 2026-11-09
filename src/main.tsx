@@ -6,7 +6,7 @@ import '@fontsource-variable/noto-sans-georgian';
 import './styles.css';
 import { partTitle, type Part } from './catalog';
 import PartDetail from './PartDetail';
-import { listPublicParts } from './repository';
+import { defaultStoreContact, listPublicParts, readStoreContact } from './repository';
 import Storefront from './Storefront';
 import { Brand, hasContact, StoreFooter } from './storefront-ui';
 
@@ -15,10 +15,12 @@ const Admin = lazy(() => import('./Admin'));
 function App() {
   const [hash, setHash] = useState(window.location.hash);
   const [parts, setParts] = useState<Part[]>([]);
+  const [contact, setContact] = useState(defaultStoreContact);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
-  const adminPage = hash === '#admin';
+  const contactSettings = hash === '#admin/contact';
+  const adminPage = hash === '#admin' || contactSettings;
   const detailId = hash.startsWith('#part/') ? hash.slice(6) : '';
   const part = parts.find(({ id }) => id === detailId);
 
@@ -33,6 +35,7 @@ function App() {
     let current = true;
     setLoading(true);
     setError('');
+    readStoreContact().then((details) => { if (current) setContact(details); }).catch(() => {});
     listPublicParts().then((items) => { if (current) setParts(items); })
       .catch((failure: unknown) => { if (current) setError(failure instanceof Error ? failure.message : 'კატალოგი ვერ ჩაიტვირთა.'); })
       .finally(() => { if (current) setLoading(false); });
@@ -62,7 +65,7 @@ function App() {
     });
   }
 
-  if (adminPage) return <Suspense fallback={<div className="shell loading-page" role="status">იტვირთება…</div>}><Admin /></Suspense>;
+  if (adminPage) return <Suspense fallback={<div className="shell loading-page" role="status">იტვირთება…</div>}><Admin showContact={contactSettings} /></Suspense>;
 
   const retry = () => setRevision((version) => version + 1);
   return <>
@@ -77,13 +80,13 @@ function App() {
     <header className="site-header">
       <div className="shell nav-inner">
         <Brand />
-        <nav className="nav-links" aria-label="მთავარი ნავიგაცია"><a className={!detailId && hash !== '#catalog' ? 'active' : ''} href="#">მთავარი</a><a className={hash === '#catalog' || detailId ? 'active' : ''} href="#catalog">კატალოგი</a>{hasContact && <a href="#contact">კონტაქტი</a>}</nav>
+        <nav className="nav-links" aria-label="მთავარი ნავიგაცია"><a className={!detailId && hash !== '#catalog' ? 'active' : ''} href="#">მთავარი</a><a className={hash === '#catalog' || detailId ? 'active' : ''} href="#catalog">კატალოგი</a>{hasContact(contact) && <a href="#contact">კონტაქტი</a>}</nav>
         <div className="nav-actions"><button className="icon-button nav-search" aria-label="ნაწილის ძებნა" onClick={focusSearch}><Search size={20} /></button><a className="admin-link" href="#admin" aria-label="ადმინისტრაცია"><span>ადმინისტრაცია</span><ArrowUpRight size={17} /></a></div>
       </div>
     </header>
     <Storefront parts={parts} loading={loading} error={error} retry={retry} hidden={Boolean(detailId)} />
-    {detailId && <PartDetail key={detailId} part={part} loading={loading} error={error} retry={retry} />}
-    <StoreFooter />
+    {detailId && <PartDetail key={detailId} contact={contact} part={part} loading={loading} error={error} retry={retry} />}
+    <StoreFooter contact={contact} />
   </>;
 }
 

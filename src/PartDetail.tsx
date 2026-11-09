@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { ArrowLeft, ArrowRight, ChevronRight, Link2, Package, PackageOpen } from 'lucide-react';
 import { CONDITIONS, formatPrice, partTitle, vehicleLabel, yearLabel, type Part } from './catalog';
 import { ContactLinks, hasContact, PartPhoto, StockPill } from './storefront-ui';
+import type { StoreContact } from './repository';
 
-export default function PartDetail({ part, loading, error, retry }: { part?: Part; loading: boolean; error: string; retry: () => void }) {
+export default function PartDetail({ contact, part, loading, error, retry }: { contact: StoreContact; part?: Part; loading: boolean; error: string; retry: () => void }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [shareFeedback, setShareFeedback] = useState('');
   const [showShareLink, setShowShareLink] = useState(false);
@@ -56,7 +57,7 @@ export default function PartDetail({ part, loading, error, retry }: { part?: Par
         {part.description && <p className="description">{part.description}</p>}
         <dl className="specifications">{specifications.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
         <div className="detail-actions">
-          {hasContact && <ContactLinks part={part} />}
+          {hasContact(contact) && <ContactLinks contact={contact} part={part} />}
           <button className="button secondary" type="button" onClick={sharePart}><Link2 size={17} /> ბმულის გაზიარება</button>
         </div>
         <span className="share-feedback" aria-live="polite">{shareFeedback}</span>

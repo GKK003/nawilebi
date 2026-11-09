@@ -41,13 +41,17 @@ npm run preview
 
 Supabase enforces access in the database. Only accounts on the allowlist can read drafts and change inventory or upload photos. Published rows expose their catalog details, including stock quantity. Product image URLs can be opened by anyone with the exact URL, including URLs for photos uploaded to drafts. Use the bucket for product photos suitable for public viewing. [Supabase Storage buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals)
 
+## Store contact details
+
+Run the [contact migration](supabase/migrations/20261110000300_store_contact.sql) once in the project's SQL Editor. It gives visitors read access and restricts changes to catalog admins. Sign in and open **კონტაქტი** in the inventory heading to publish a phone number, address, or map link. An address creates a Google Maps search link by default. Enter the location's share link to show a specific map pin.
+
 ## Configuration and hosting
 
 | Variable | Value |
 | --- | --- |
 | `VITE_SUPABASE_URL` | Supabase project URL, such as `https://your-project.supabase.co`. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable browser key from the same project. |
-| `VITE_STORE_PHONE` | Optional public phone number with international country code, such as `+995555000000`. |
+| `VITE_STORE_PHONE` | Optional initial public phone number. The saved contact settings take precedence. |
 | `VITE_STORE_EMAIL` | Optional public contact email. |
 | `VITE_STORE_WHATSAPP` | Optional public WhatsApp number with international country code, such as `995555000000`. |
 

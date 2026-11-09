@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronRight, CircleAlert,
   Eye, EyeOff, ImagePlus, LayoutGrid, LockKeyhole, LogOut, Package, Pencil,
-  Plus, RefreshCw, Search, Trash2, Upload, X,
+  MapPin, Plus, RefreshCw, Search, Trash2, Upload, X,
 } from 'lucide-react'
 import {
   CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES,
@@ -10,7 +10,7 @@ import {
 } from './catalog'
 import {
   PartSaveUnconfirmedError, deletePart, discardUploads, getAdminSession, imageUrl,
-  listAdminParts, savePart, signIn, signOut, uploadPartImages,
+  listAdminParts, readStoreContact, savePart, saveStoreContact, signIn, signOut, uploadPartImages, type StoreContact,
 } from './repository'
 import './admin.css'
 
@@ -135,7 +135,10 @@ function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
           <h1>ნაწილების მართვა</h1>
           <p className="inventory-subtitle">დაამატეთ ნაწილები, განაახლეთ ფასი და აკონტროლეთ მარაგი.</p>
         </div>
-        <button className="inventory-button is-primary" onClick={onNew}><Plus size={19} /> ნაწილის დამატება</button>
+        <div className="inventory-heading-actions">
+          <a className="inventory-button" href="#admin/contact"><MapPin size={17} /> კონტაქტი</a>
+          <button className="inventory-button is-primary" onClick={onNew}><Plus size={19} /> ნაწილის დამატება</button>
+        </div>
       </div>
       <div className="inventory-stats">
         <div className="inventory-stat inventory-card"><span className="inventory-stat-icon"><LayoutGrid size={20} /></span><span>სულ ნაწილები<strong>{countFormatter.format(parts.length)}</strong></span></div>
@@ -449,7 +452,82 @@ function DeleteDialog({ part, onClose, onDeleted }: { part: Part; onClose: () =>
   )
 }
 
-export default function Admin() {
+function ContactSettings() {
+  const [contact, setContact] = useState<StoreContact | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  useEffect(() => {
+    let current = true
+    readStoreContact().then(result => {
+      if (current) setContact(result)
+    }).catch(failure => {
+      if (current) setError(errorMessage(failure, 'საკონტაქტო მონაცემები ვერ ჩაიტვირთა.'))
+    })
+    return () => { current = false }
+  }, [attempt])
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending) return
+    setError('')
+    setSaved(false)
+
+    const form = new FormData(event.currentTarget)
+    const field = (name: string) => String(form.get(name) ?? '').trim() || null
+    const phone = field('phone')?.replace(/\s+/g, ' ') ?? null
+    const digits = phone?.replace(/\D/g, '').length ?? 0
+    if (phone && (!/^\+?[0-9(). -]+$/.test(phone) || digits < 6 || digits > 15)) {
+      setError('მიუთითეთ მოქმედი ტელეფონის ნომერი.')
+      return
+    }
+
+    let mapUrl = field('map_url')
+    if (mapUrl) {
+      try {
+        const parsed = new URL(mapUrl)
+        if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.href.length > 2048) throw new Error()
+        mapUrl = parsed.href
+      } catch {
+        setError('რუკის ბმული უნდა იწყებოდეს https://-ით.')
+        return
+      }
+    }
+
+    setPending(true)
+    try {
+      await saveStoreContact({ phone, address: field('address'), map_url: mapUrl })
+      setSaved(true)
+    } catch (failure) {
+      setError(errorMessage(failure, 'საკონტაქტო მონაცემები ვერ შეინახა.'))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return <>
+    <a className="inventory-breadcrumb" href="#admin"><ArrowLeft size={16} /> ინვენტარი</a>
+    <div className="inventory-page-heading">
+      <div><h1>საკონტაქტო მონაცემები</h1><p className="inventory-subtitle">ეს ინფორმაცია მომხმარებლებს კატალოგში გამოუჩნდებათ.</p></div>
+    </div>
+    {!contact && (error
+      ? <><Feedback>{error}</Feedback><button type="button" className="inventory-button" onClick={() => { setError(''); setAttempt(value => value + 1) }}>ხელახლა ჩატვირთვა</button></>
+      : <p role="status">იტვირთება…</p>)}
+    {contact && <form className="inventory-card inventory-form-card inventory-contact-form" onSubmit={submit} onChange={() => setSaved(false)}>
+      {error && <Feedback>{error}</Feedback>}
+      {saved && <Feedback success>საკონტაქტო მონაცემები გამოქვეყნდა.</Feedback>}
+      <label className="inventory-field"><span>ტელეფონის ნომერი</span><input name="phone" type="tel" autoComplete="tel" maxLength={40} defaultValue={contact.phone ?? ''} disabled={pending} /></label>
+      <label className="inventory-field"><span>მისამართი</span><input name="address" autoComplete="street-address" maxLength={240} defaultValue={contact.address ?? ''} disabled={pending} /></label>
+      <label className="inventory-field"><span>რუკის ბმული (არასავალდებულო)</span><input name="map_url" type="url" maxLength={2048} defaultValue={contact.map_url ?? ''} aria-describedby="map-help" disabled={pending} /></label>
+      <p className="inventory-subtitle" id="map-help">რუკა მისამართით იხსნება. ზუსტი წერტილის საჩვენებლად ჩასვით რუკის ბმული.</p>
+      <div className="inventory-editor-actions"><button className="inventory-button is-primary" disabled={pending} type="submit">{pending ? 'ინახება…' : 'შენახვა'}</button></div>
+    </form>}
+  </>
+}
+
+export default function Admin({ showContact }: { showContact: boolean }) {
   const [session, setSession] = useState<AdminSession | null | undefined>(undefined)
   const [parts, setParts] = useState<Part[] | null>(null)
   const [editor, setEditor] = useState<{ part: Part | null } | null>(null)
@@ -473,7 +551,7 @@ export default function Admin() {
   }, [])
 
   useEffect(() => {
-    if (!session) return
+    if (!session || showContact) return
     let current = true
     listAdminParts().then(result => {
       if (current) setParts(result)
@@ -481,7 +559,7 @@ export default function Admin() {
       if (current) setError(errorMessage(error, 'ინვენტარის ჩატვირთვა ვერ მოხერხდა.'))
     })
     return () => { current = false }
-  }, [session, attempt])
+  }, [session, attempt, showContact])
 
   function openEditor(part: Part | null) {
     setEditor({ part })
@@ -530,17 +608,19 @@ export default function Admin() {
       </>}
       {session && (
         <main className="inventory-content" id="main-content">
-          {error && <Feedback>{error}</Feedback>}
-          {notice && <Feedback success>{notice}</Feedback>}
-          {editor ? <PartEditor key={editor.part?.id ?? 'new'} part={editor.part} onCancel={() => setEditor(null)} onSaved={handleSaved} />
-            : parts ? <InventoryList parts={parts} onNew={() => openEditor(null)} onEdit={openEditor} onRemove={setToDelete} onRefresh={refresh} />
-            : error ? <button className="inventory-button" type="button" onClick={refresh}>ხელახლა ჩატვირთვა</button>
-            : <p role="status">ინვენტარი იტვირთება…</p>}
-          {toDelete && <DeleteDialog part={toDelete} onClose={() => setToDelete(null)} onDeleted={deleted => {
-            setParts(previous => previous?.filter(part => part.id !== deleted.id) ?? [])
-            setToDelete(null)
-            setNotice('ნაწილი წაშლილია.')
-          }} />}
+          {showContact ? <ContactSettings /> : <>
+            {error && <Feedback>{error}</Feedback>}
+            {notice && <Feedback success>{notice}</Feedback>}
+            {editor ? <PartEditor key={editor.part?.id ?? 'new'} part={editor.part} onCancel={() => setEditor(null)} onSaved={handleSaved} />
+              : parts ? <InventoryList parts={parts} onNew={() => openEditor(null)} onEdit={openEditor} onRemove={setToDelete} onRefresh={refresh} />
+              : error ? <button className="inventory-button" type="button" onClick={refresh}>ხელახლა ჩატვირთვა</button>
+              : <p role="status">ინვენტარი იტვირთება…</p>}
+            {toDelete && <DeleteDialog part={toDelete} onClose={() => setToDelete(null)} onDeleted={deleted => {
+              setParts(previous => previous?.filter(part => part.id !== deleted.id) ?? [])
+              setToDelete(null)
+              setNotice('ნაწილი წაშლილია.')
+            }} />}
+          </>}
         </main>
       )}
     </div>

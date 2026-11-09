@@ -8,6 +8,18 @@ const partColumns = 'id,name,category,make,model,year_from,year_to,oem_number,co
 const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
 const staleMessage = 'ჩანაწერი უკვე შეიცვალა. განაახლე სია და სცადე ხელახლა.';
 
+export interface StoreContact {
+  phone: string | null;
+  address: string | null;
+  map_url: string | null;
+}
+
+export const defaultStoreContact: StoreContact = {
+  phone: import.meta.env.VITE_STORE_PHONE?.trim() || null,
+  address: null,
+  map_url: null,
+};
+
 export class PartSaveUnconfirmedError extends Error {
   constructor() {
     super('ნაწილის შენახვა ვერ დადასტურდა. განაახლე სია და გადაამოწმე ჩანაწერი.');
@@ -28,6 +40,20 @@ const supabase = connect();
 function client() {
   if (!supabase) throw new Error('Supabase-ის კავშირი დასაყენებელია.');
   return supabase;
+}
+
+export async function readStoreContact(): Promise<StoreContact> {
+  const { data, error } = await client().from('store_contact').select('phone,address,map_url').eq('id', true).maybeSingle();
+  if (error?.code === 'PGRST205' || error?.code === '42P01') {
+    throw new Error('Supabase-ში საკონტაქტო მონაცემების მიგრაციაა გასაშვები.');
+  }
+  if (error) throw new Error('საკონტაქტო მონაცემები ვერ ჩაიტვირთა.');
+  return data ?? defaultStoreContact;
+}
+
+export async function saveStoreContact(contact: StoreContact) {
+  const { error } = await client().from('store_contact').upsert({ id: true, ...contact });
+  if (error) throw new Error('საკონტაქტო მონაცემები ვერ შეინახა. სცადე ხელახლა.');
 }
 
 async function confirmAdmin(email: string) {

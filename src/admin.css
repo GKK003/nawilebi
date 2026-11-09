@@ -40,6 +40,7 @@
 .inventory-session-error { max-width: 440px; padding-bottom: 0; }
 
 .inventory-page-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin: 0 0 24px; }
+.inventory-heading-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .inventory .inventory-kicker { margin-bottom: 7px; color: var(--inventory-primary-dark); font-size: 12px; font-weight: 800; letter-spacing: .02em; }
 .inventory h1 { margin-bottom: 7px; color: var(--inventory-ink); font-size: clamp(25px, 4.5vw, 39px); line-height: 1.25; letter-spacing: -.035em; }
 .inventory h2 { color: var(--inventory-ink); font-size: 17px; line-height: 1.3; }
@@ -126,6 +127,8 @@
 .inventory-editor-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(245px, 1fr); gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .inventory-editor-main, .inventory-editor-side { display: grid; align-content: start; gap: 15px; min-width: 0; }
 .inventory-form-card { display: grid; gap: 16px; padding: clamp(15px, 3vw, 21px); }
+.inventory-contact-form { max-width: 660px; }
+.inventory-contact-form > .inventory-subtitle { margin: -8px 0 0; }
 .inventory-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .inventory-field { display: grid; align-content: start; gap: 6px; color: var(--inventory-ink); font-size: 13px; font-weight: 750; }
 .inventory-field.is-full { grid-column: 1 / -1; }
