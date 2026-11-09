@@ -8,7 +8,7 @@ import { partTitle, type Part } from './catalog';
 import PartDetail from './PartDetail';
 import { defaultStoreContact, listPublicParts, readStoreContact } from './repository';
 import Storefront from './Storefront';
-import { Brand, hasContact, StoreFooter } from './storefront-ui';
+import { Brand, StoreFooter } from './storefront-ui';
 
 const Admin = lazy(() => import('./Admin'));
 
@@ -48,7 +48,7 @@ function App() {
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      const target = hash === '#catalog' || hash === '#contact' ? document.querySelector(hash) : null;
+      const target = hash === '#catalog' ? document.getElementById('catalog') : null;
       if (target) target.scrollIntoView();
       else window.scrollTo(0, 0);
     });
@@ -80,13 +80,13 @@ function App() {
     <header className="site-header">
       <div className="shell nav-inner">
         <Brand />
-        <nav className="nav-links" aria-label="მთავარი ნავიგაცია"><a className={!detailId && hash !== '#catalog' ? 'active' : ''} href="#">მთავარი</a><a className={hash === '#catalog' || detailId ? 'active' : ''} href="#catalog">კატალოგი</a>{hasContact(contact) && <a href="#contact">კონტაქტი</a>}</nav>
+        <nav className="nav-links" aria-label="მთავარი ნავიგაცია"><a className={!detailId && hash !== '#catalog' ? 'active' : ''} href="#">მთავარი</a><a className={hash === '#catalog' || detailId ? 'active' : ''} href="#catalog">კატალოგი</a></nav>
         <div className="nav-actions"><button className="icon-button nav-search" aria-label="ნაწილის ძებნა" onClick={focusSearch}><Search size={20} /></button><a className="admin-link" href="#admin" aria-label="ადმინისტრაცია"><span>ადმინისტრაცია</span><ArrowUpRight size={17} /></a></div>
       </div>
     </header>
     <Storefront parts={parts} loading={loading} error={error} retry={retry} hidden={Boolean(detailId)} />
     {detailId && <PartDetail key={detailId} contact={contact} part={part} loading={loading} error={error} retry={retry} />}
-    <StoreFooter contact={contact} />
+    <StoreFooter />
   </>;
 }
 

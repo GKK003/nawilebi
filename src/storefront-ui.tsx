@@ -29,12 +29,11 @@ export function ContactLinks({ contact, part }: { contact: StoreContact; part?: 
   </div>;
 }
 
-export function StoreFooter({ contact }: { contact: StoreContact }) {
-  return <footer className="site-footer" id="contact">
+export function StoreFooter() {
+  return <footer className="site-footer">
     <div className="shell footer-inner">
       <div><Brand /><p>მოძებნე ნაწილი და გადაამოწმე მარაგი.</p></div>
       <div className="footer-links">
-        {hasContact(contact) && <ContactLinks contact={contact} />}
         <a href="#catalog">კატალოგი</a>
         <a href="#admin">ადმინისტრაცია <ArrowUpRight size={15} /></a>
       </div>

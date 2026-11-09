@@ -510,7 +510,7 @@ function ContactSettings() {
   return <>
     <a className="inventory-breadcrumb" href="#admin"><ArrowLeft size={16} /> ინვენტარი</a>
     <div className="inventory-page-heading">
-      <div><h1>საკონტაქტო მონაცემები</h1><p className="inventory-subtitle">ეს ინფორმაცია მომხმარებლებს კატალოგში გამოუჩნდებათ.</p></div>
+      <div><h1>საკონტაქტო მონაცემები</h1><p className="inventory-subtitle">ეს ინფორმაცია მომხმარებლებს ნაწილის გვერდზე გამოუჩნდებათ.</p></div>
     </div>
     {!contact && (error
       ? <><Feedback>{error}</Feedback><button type="button" className="inventory-button" onClick={() => { setError(''); setAttempt(value => value + 1) }}>ხელახლა ჩატვირთვა</button></>
