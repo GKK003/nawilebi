@@ -147,7 +147,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .contact-links a:hover { background: var(--brand-dark); }
 .contact-links a { max-width: 100%; }
 .contact-links a span { min-width: 0; }
-.share-feedback:not(:empty) { display: block; margin-top: 9px; color: #136841; font-size: 12px; }
+.copy-feedback:not(:empty) { display: block; margin-top: 9px; color: #136841; font-size: 12px; }
 .detail-info .filter-field { margin-top: 12px; }
 
 .site-footer { border-top: 1px solid var(--line); background: white; }

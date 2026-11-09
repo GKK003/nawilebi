@@ -6,20 +6,14 @@ import type { StoreContact } from './repository';
 
 export default function PartDetail({ contact, part, loading, error, retry }: { contact: StoreContact; part?: Part; loading: boolean; error: string; retry: () => void }) {
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [shareFeedback, setShareFeedback] = useState('');
-  const [showShareLink, setShowShareLink] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'manual'>('idle');
 
-  async function sharePart() {
+  async function copyPartLink() {
     try {
-      if (navigator.share) {
-        await navigator.share({ title: part?.name, url: window.location.href });
-        return;
-      }
       await navigator.clipboard.writeText(window.location.href);
-      setShareFeedback('ბმული დაკოპირდა');
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      setShowShareLink(true);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('manual');
     }
   }
 
@@ -58,10 +52,10 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
         <dl className="specifications">{specifications.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
         <div className="detail-actions">
           {hasContact(contact) && <ContactLinks contact={contact} part={part} />}
-          <button className="button secondary" type="button" onClick={sharePart}><Link2 size={17} /> ბმულის გაზიარება</button>
+          <button className="button secondary" type="button" onClick={copyPartLink}><Link2 size={17} /> ბმულის კოპირება</button>
         </div>
-        <span className="share-feedback" aria-live="polite">{shareFeedback}</span>
-        {showShareLink && <label className="filter-field">ნაწილის ბმული<input readOnly value={window.location.href} onFocus={(event) => event.target.select()} /></label>}
+        <span className="copy-feedback" role="status">{copyStatus === 'copied' && 'ბმული დაკოპირდა'}</span>
+        {copyStatus === 'manual' && <label className="filter-field">დააკოპირე ნაწილის ბმული<input readOnly value={window.location.href} onFocus={(event) => event.target.select()} /></label>}
       </section>
     </div>
   </main>;
