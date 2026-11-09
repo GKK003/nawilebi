@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, ChevronRight, Link2, Package, PackageOpen } from 'lucide-react';
-import { CONDITIONS, formatPrice, vehicleLabel, yearLabel, type Part } from './catalog';
+import { CONDITIONS, formatPrice, partTitle, vehicleLabel, yearLabel, type Part } from './catalog';
 import { ContactLinks, hasContact, PartPhoto, StockPill } from './storefront-ui';
 
 export default function PartDetail({ part, loading, error, retry }: { part?: Part; loading: boolean; error: string; retry: () => void }) {
@@ -51,8 +51,7 @@ export default function PartDetail({ part, loading, error, retry }: { part?: Par
       </section>
       <section className="detail-info" aria-labelledby="part-title">
         <div className="detail-meta"><StockPill quantity={part.quantity} /></div>
-        <h1 id="part-title">{part.name}</h1>
-        {(vehicleLabel(part) || yearLabel(part)) && <p className="detail-vehicle">{[vehicleLabel(part), yearLabel(part)].filter(Boolean).join(' · ')}</p>}
+        <h1 id="part-title">{partTitle(part)}</h1>
         <div className="detail-price"><strong>{formatPrice(part.price)}</strong><span><Package size={17} /> მარაგი: {part.quantity} ც.</span></div>
         {part.description && <p className="description">{part.description}</p>}
         <dl className="specifications">{specifications.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>

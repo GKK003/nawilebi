@@ -4,7 +4,7 @@ import { ArrowUpRight, Search } from 'lucide-react';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/noto-sans-georgian';
 import './styles.css';
-import { type Part } from './catalog';
+import { partTitle, type Part } from './catalog';
 import PartDetail from './PartDetail';
 import { listPublicParts } from './repository';
 import Storefront from './Storefront';
@@ -40,7 +40,7 @@ function App() {
   }, [adminPage, revision]);
 
   useEffect(() => {
-    document.title = adminPage ? 'ადმინისტრაცია — ნაწილები' : part ? `${part.name} — ნაწილები` : 'ნაწილები — ავტონაწილების კატალოგი';
+    document.title = adminPage ? 'ადმინისტრაცია — ნაწილები' : part ? `${partTitle(part)} — ნაწილები` : 'ნაწილები — ავტონაწილების კატალოგი';
   }, [adminPage, part]);
 
   useEffect(() => {

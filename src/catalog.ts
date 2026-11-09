@@ -60,3 +60,7 @@ export function yearLabel({ year_from, year_to }: Part) {
   if (year_to) return `${year_to} წლამდე`;
   return '';
 }
+
+export function partTitle(part: Part) {
+  return [vehicleLabel(part), yearLabel(part), part.name].filter(Boolean).join(' ');
+}

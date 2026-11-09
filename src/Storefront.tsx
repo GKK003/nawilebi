@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Grid2X2, PackageOpen, Search, SlidersHorizontal, X } from 'lucide-react';
-import { CONDITIONS, formatPrice, vehicleLabel, yearLabel, type Part, type PartCondition } from './catalog';
+import { CONDITIONS, formatPrice, partTitle, yearLabel, type Part, type PartCondition } from './catalog';
 import { PartPhoto, StockPill } from './storefront-ui';
 
 const sortOptions = [
@@ -27,7 +27,6 @@ function sortedUnique(values: (string | null)[]) {
 }
 
 function ProductCard({ part }: { part: Part }) {
-  const vehicle = [vehicleLabel(part), yearLabel(part)].filter(Boolean).join(' · ');
   return <a href={`#part/${part.id}`} className="product-card">
     <div className="card-photo">
       <PartPhoto path={part.images[0]?.path} alt={part.images[0]?.alt || part.name} lazy />
@@ -35,8 +34,7 @@ function ProductCard({ part }: { part: Part }) {
     </div>
     <div className="card-content">
       <div className="card-meta">{part.category}</div>
-      <h3>{part.name}</h3>
-      {vehicle && <p>{vehicle}</p>}
+      <h3>{partTitle(part)}</h3>
       <div className="card-bottom"><strong className={part.price === null ? 'contact-price' : ''}>{formatPrice(part.price)}</strong><span className="card-arrow" aria-hidden="true"><ArrowRight size={19} /></span></div>
     </div>
   </a>;
