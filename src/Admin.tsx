@@ -5,12 +5,12 @@ import {
   Plus, RefreshCw, Search, Trash2, Upload, X,
 } from 'lucide-react'
 import {
-  CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, PART_CATEGORIES,
+  CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES,
   formatPrice, stockStatus, type Part, type PartInput,
 } from './catalog'
 import {
   PartSaveUnconfirmedError, deletePart, discardUploads, getAdminSession, imageUrl,
-  isLive, listAdminParts, savePart, signIn, signOut, uploadPartImages,
+  listAdminParts, savePart, signIn, signOut, uploadPartImages,
 } from './repository'
 import './admin.css'
 
@@ -60,7 +60,7 @@ function Login({ onSession }: { onSession: (session: AdminSession) => void }) {
     setPending(true)
     setError('')
     try {
-      onSession(await signIn(isLive ? email.trim() : '', isLive ? password : ''))
+      onSession(await signIn(email.trim(), password))
     } catch (error) {
       setError(errorMessage(error, 'შესვლა ვერ მოხერხდა. შეამოწმეთ მონაცემები და სცადეთ ხელახლა.'))
     } finally {
@@ -74,10 +74,9 @@ function Login({ onSession }: { onSession: (session: AdminSession) => void }) {
         <div className="inventory-login-icon"><LockKeyhole size={24} /></div>
         <p className="inventory-kicker">ადმინისტრირება</p>
         <h1 id="inventory-login-title">მართვის პანელი</h1>
-        <p className="inventory-subtitle">{isLive ? 'შედით თქვენი ანგარიშით ნაწილებისა და მარაგის სამართავად.' : 'სატესტო რეჟიმში შეგიძლიათ სცადოთ ნაწილებისა და მარაგის მართვა.'}</p>
+        <p className="inventory-subtitle">შედით თქვენი ანგარიშით ნაწილებისა და მარაგის სამართავად.</p>
         {error && <Feedback>{error}</Feedback>}
         <form className="inventory-login-form" onSubmit={submit}>
-          {isLive && <>
             <label className="inventory-field">
               <span>ელფოსტა</span>
               <input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="username" required />
@@ -91,9 +90,8 @@ function Login({ onSession }: { onSession: (session: AdminSession) => void }) {
                 </button>
               </span>
             </div>
-          </>}
           <button className="inventory-button is-primary" disabled={pending} type="submit">
-            {pending ? 'შესვლა…' : isLive ? 'შესვლა' : 'სატესტო პანელის გახსნა'} <ArrowRight size={17} />
+            {pending ? 'შესვლა…' : 'შესვლა'} <ArrowRight size={17} />
           </button>
         </form>
       </section>
@@ -124,7 +122,7 @@ function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
     if (filter === 'published' && !part.is_published) return false
     if (filter === 'hidden' && part.is_published) return false
     if (filter === 'out' && part.quantity !== 0) return false
-    return [part.name, part.sku, part.make, part.model, part.oem_number].some(value => value?.toLowerCase().includes(search))
+    return [part.name, part.category, part.make, part.model, part.oem_number].some(value => value?.toLowerCase().includes(search))
   })
   const publishedCount = parts.filter(part => part.is_published).length
   const stockCount = parts.filter(part => part.quantity > 0).length
@@ -150,7 +148,7 @@ function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
           <div className="inventory-list-filters">
             <label className="inventory-search">
               <Search size={18} />
-              <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="ძებნა…" title="სახელი, SKU, OEM" aria-label="ინვენტარში ძებნა" />
+              <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="ძებნა…" title="სახელი, კატეგორია ან OEM" aria-label="ინვენტარში ძებნა" />
             </label>
             <select aria-label="ინვენტარის ფილტრი" value={filter} onChange={event => setFilter(event.target.value as InventoryFilter)}>
               {FILTERS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -172,7 +170,7 @@ function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
                           <div className="inventory-item-image">
                             {part.images[0] ? <img src={imageUrl(part.images[0].path)} alt="" loading="lazy" /> : <Package size={22} />}
                           </div>
-                          <div><button className="inventory-part-link" onClick={() => onEdit(part)}>{part.name}</button><span>{part.sku}</span></div>
+                          <div><button className="inventory-part-link" onClick={() => onEdit(part)}>{part.name}</button><span>{part.category}</span></div>
                         </div>
                       </td>
                       <td className="inventory-table-price" role="cell">{formatPrice(part.price)}</td>
@@ -267,12 +265,12 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
     const value = (name: string) => String(data.get(name) ?? '').trim()
     const number = (name: string) => value(name) ? Number(value(name)) : null
     const name = value('name')
-    const sku = value('sku')
+    const category = value('category')
     const yearFrom = number('year_from')
     const yearTo = number('year_to')
     setError('')
-    if (!name || !sku) {
-      setError('მიუთითეთ ნაწილის სახელი და SKU.')
+    if (!name || !category) {
+      setError('მიუთითეთ ნაწილის სახელი და კატეგორია.')
       return
     }
     if (yearFrom !== null && yearTo !== null && yearFrom > yearTo) {
@@ -281,8 +279,7 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
     }
 
     const input: PartInput = {
-      id: partId, name, sku,
-      category: value('category') as PartInput['category'],
+      id: partId, name, category,
       condition: value('condition') as PartInput['condition'],
       make: value('make') || null,
       model: value('model') || null,
@@ -335,9 +332,8 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
               <h2 id="inventory-details-title">ძირითადი ინფორმაცია</h2>
               <div className="inventory-field-grid">
                 <label className="inventory-field is-full"><span>ნაწილის სახელი <span className="inventory-required">*</span></span><input name="name" defaultValue={part?.name} maxLength={160} required /></label>
-                <label className="inventory-field"><span>შიდა კოდი (SKU) <span className="inventory-required">*</span></span><input name="sku" defaultValue={part?.sku} maxLength={64} required /></label>
+                <label className="inventory-field"><span>კატეგორია <span className="inventory-required">*</span></span><input name="category" defaultValue={part?.category} placeholder="მაგ. გადაცემათა კოლოფი" maxLength={80} required /></label>
                 <label className="inventory-field"><span>მწარმოებლის ნომერი (OEM)</span><input name="oem_number" defaultValue={part?.oem_number ?? ''} maxLength={120} /></label>
-                <label className="inventory-field"><span>კატეგორია <span className="inventory-required">*</span></span><select name="category" defaultValue={part?.category ?? ''} required><option value="" disabled>აირჩიეთ კატეგორია</option>{PART_CATEGORIES.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                 <label className="inventory-field"><span>მდგომარეობა <span className="inventory-required">*</span></span><select name="condition" defaultValue={part?.condition ?? 'new'} required>{CONDITIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                 <label className="inventory-field is-full"><span>აღწერა</span><textarea name="description" defaultValue={part?.description} rows={4} maxLength={5000} placeholder="მაგალითად, ნაწილის მდგომარეობა და თავსებადობა" /></label>
               </div>
@@ -534,7 +530,6 @@ export default function Admin() {
       </>}
       {session && (
         <main className="inventory-content" id="main-content">
-          {!isLive && <div className="inventory-demo-note"><CircleAlert size={17} /><span><strong>სატესტო რეჟიმი</strong> · ცვლილებები მხოლოდ ამ ბრაუზერში ინახება.</span></div>}
           {error && <Feedback>{error}</Feedback>}
           {notice && <Feedback success>{notice}</Feedback>}
           {editor ? <PartEditor key={editor.part?.id ?? 'new'} part={editor.part} onCancel={() => setEditor(null)} onSaved={handleSaved} />

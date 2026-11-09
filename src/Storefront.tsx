@@ -1,14 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowRight, CircleDot, Filter, Grid2X2, Lightbulb, PackageOpen, Search, SlidersHorizontal, X, Zap, Droplets, Settings2, Boxes, CarFront, Layers3 } from 'lucide-react';
-import { categoryLabel, CONDITIONS, formatPrice, PART_CATEGORIES, vehicleLabel, yearLabel, type Part, type PartCategory, type PartCondition } from './catalog';
+import { useRef, useState } from 'react';
+import { ArrowDown, ArrowRight, Grid2X2, PackageOpen, Search, SlidersHorizontal, X } from 'lucide-react';
+import { CONDITIONS, formatPrice, vehicleLabel, yearLabel, type Part, type PartCondition } from './catalog';
 import { PartPhoto, StockPill } from './storefront-ui';
 
-const categoryIcons: Record<PartCategory, ReactNode> = {
-  brakes: <CircleDot />, engine: <Settings2 />, suspension: <Layers3 />, lighting: <Lightbulb />,
-  filters: <Filter />, fluids: <Droplets />, electrical: <Zap />, body: <CarFront />, other: <Boxes />,
-};
-
-const shortcuts: PartCategory[] = ['brakes', 'engine', 'suspension', 'filters', 'lighting', 'fluids'];
 const sortOptions = [
   { value: 'featured', label: 'რჩეული' },
   { value: 'newest', label: 'ბოლოს დამატებული' },
@@ -18,14 +12,13 @@ const sortOptions = [
 
 interface Filters {
   search: string;
-  category: PartCategory | '';
   make: string;
   model: string;
   condition: PartCondition | '';
   inStock: boolean;
 }
 
-const initialFilters: Filters = { search: '', category: '', make: '', model: '', condition: '', inStock: false };
+const initialFilters: Filters = { search: '', make: '', model: '', condition: '', inStock: false };
 const collator = new Intl.Collator('ka-GE', { sensitivity: 'base' });
 const normalize = (value: string) => value.normalize('NFKC').toLocaleLowerCase('ka-GE').replace(/[^\p{L}\p{N}]+/gu, '');
 
@@ -41,7 +34,7 @@ function ProductCard({ part }: { part: Part }) {
       <StockPill quantity={part.quantity} />
     </div>
     <div className="card-content">
-      <div className="card-meta"><span>{categoryLabel(part.category)}</span><span>{part.sku}</span></div>
+      <div className="card-meta">{part.category}</div>
       <h3>{part.name}</h3>
       {vehicle && <p>{vehicle}</p>}
       <div className="card-bottom"><strong className={part.price === null ? 'contact-price' : ''}>{formatPrice(part.price)}</strong><span className="card-arrow" aria-hidden="true"><ArrowRight size={19} /></span></div>
@@ -57,14 +50,13 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
   const filterDialog = useRef<HTMLDialogElement>(null);
   const makes = sortedUnique(parts.map(({ make }) => make));
   const models = sortedUnique(parts.filter((part) => !filters.make || part.make === filters.make).map(({ model }) => model));
-  const filterCount = [filters.category, filters.make, filters.model, filters.condition, filters.inStock].filter(Boolean).length;
+  const filterCount = [filters.make, filters.model, filters.condition, filters.inStock].filter(Boolean).length;
   const searchTerms = filters.search.split(/\s+/).map(normalize).filter(Boolean);
 
   const matches = parts.filter((part) => {
-    const searchable = [part.name, part.sku, part.oem_number, part.make, part.model, yearLabel(part), categoryLabel(part.category)]
-      .filter(Boolean).map((value) => normalize(value!));
-    return (!filters.category || part.category === filters.category)
-      && (!filters.make || part.make === filters.make)
+    const searchable = [part.name, part.category, part.oem_number, part.make, part.model, yearLabel(part)]
+      .filter((value): value is string => Boolean(value)).map(normalize);
+    return (!filters.make || part.make === filters.make)
       && (!filters.model || part.model === filters.model)
       && (!filters.condition || part.condition === filters.condition)
       && (!filters.inStock || part.quantity > 0)
@@ -83,17 +75,7 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
     setFilters((current) => ({ ...current, [key]: value, ...(key === 'make' ? { model: '' } : {}) }));
   }
 
-  function selectCategory(category: PartCategory | '') {
-    setFilter('category', category);
-    if (window.location.hash === '#catalog') document.getElementById('catalog')?.scrollIntoView();
-    else window.location.hash = 'catalog';
-  }
-
   const filterFields = <>
-    <label className="filter-field">კატეგორია<select value={filters.category} onChange={(event) => setFilter('category', event.target.value as Filters['category'])}>
-      <option value="">ყველა კატეგორია</option>
-      {PART_CATEGORIES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-    </select></label>
     <label className="filter-field">ავტომობილის მარკა<select value={filters.make} onChange={(event) => setFilter('make', event.target.value)}>
       <option value="">ყველა მარკა</option>{makes.map((make) => <option key={make}>{make}</option>)}
     </select></label>
@@ -111,17 +93,8 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
       <div className="hero-copy">
         <div className="hero-kicker"><span /> ავტონაწილების კატალოგი</div>
         <h1 id="hero-title">იპოვე საჭირო <span>ავტონაწილი.</span></h1>
-        <p>მოძებნე სახელით, მოდელით ან ნაწილის კოდით და გადაამოწმე ფასი და მარაგი.</p>
+        <p>მოძებნე სახელით, კატეგორიით ან ავტომობილით და გადაამოწმე ფასი და მარაგი.</p>
         <a className="button primary hero-action" href="#catalog">კატალოგის ნახვა <ArrowDown size={17} /></a>
-      </div>
-    </section>
-
-    <section className="category-section" aria-labelledby="category-title">
-      <div className="section-head"><h2 id="category-title">კატეგორიები</h2><button className="text-button" onClick={() => selectCategory('')}>ყველა ნაწილი <ArrowRight size={16} /></button></div>
-      <div className="category-grid">
-        {shortcuts.map((category) => <button className="category-tile" key={category} aria-pressed={filters.category === category} onClick={() => selectCategory(category)}>
-          <span className="category-icon" aria-hidden="true">{categoryIcons[category]}</span><strong>{categoryLabel(category)}</strong>
-        </button>)}
       </div>
     </section>
 
@@ -134,7 +107,7 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
         </aside>
         <div className="results">
           <div className="results-toolbar">
-            <label className="catalog-search"><Search size={19} aria-hidden="true" /><input id="catalog-search" type="search" placeholder="სახელი, კოდი ან ავტომობილი" aria-label="ნაწილის ძებნა" value={filters.search} onChange={(event) => setFilter('search', event.target.value)} /></label>
+            <label className="catalog-search"><Search size={19} aria-hidden="true" /><input id="catalog-search" type="search" placeholder="სახელი, კატეგორია ან ავტომობილი" aria-label="ნაწილის ძებნა" value={filters.search} onChange={(event) => setFilter('search', event.target.value)} /></label>
             <button className="button secondary mobile-filter" onClick={() => filterDialog.current?.showModal()}><SlidersHorizontal size={18} /> ფილტრები{filterCount ? ` (${filterCount})` : ''}</button>
             <label className="sort-field"><span className="sr-only">დალაგება</span><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
               {sortOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}

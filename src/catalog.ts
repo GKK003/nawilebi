@@ -1,15 +1,3 @@
-export const PART_CATEGORIES = [
-  { value: 'brakes', label: 'მუხრუჭები' },
-  { value: 'engine', label: 'ძრავა' },
-  { value: 'suspension', label: 'სავალი ნაწილი' },
-  { value: 'lighting', label: 'განათება' },
-  { value: 'filters', label: 'ფილტრები' },
-  { value: 'fluids', label: 'ზეთი და სითხეები' },
-  { value: 'electrical', label: 'ელექტროობა' },
-  { value: 'body', label: 'ძარის ნაწილები' },
-  { value: 'other', label: 'სხვა ნაწილები' },
-] as const;
-
 export const CONDITIONS = [
   { value: 'new', label: 'ახალი' },
   { value: 'used', label: 'მეორადი' },
@@ -20,7 +8,6 @@ export const MAX_IMAGES = 8;
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 export const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
-export type PartCategory = typeof PART_CATEGORIES[number]['value'];
 export type PartCondition = typeof CONDITIONS[number]['value'];
 
 export interface PartImage {
@@ -30,9 +17,8 @@ export interface PartImage {
 
 export interface Part {
   id: string;
-  sku: string;
   name: string;
-  category: PartCategory;
+  category: string;
   make: string | null;
   model: string | null;
   year_from: number | null;
@@ -61,10 +47,6 @@ export function stockStatus(quantity: number): { label: string; tone: 'available
   if (quantity === 0) return { label: 'ამოწურულია', tone: 'out' };
   if (quantity <= 3) return { label: 'მცირე მარაგი', tone: 'low' };
   return { label: 'მარაგშია', tone: 'available' };
-}
-
-export function categoryLabel(category: string) {
-  return PART_CATEGORIES.find(({ value }) => value === category)?.label ?? category;
 }
 
 export function vehicleLabel(part: Part) {

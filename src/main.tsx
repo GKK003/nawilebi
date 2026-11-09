@@ -6,7 +6,7 @@ import '@fontsource-variable/noto-sans-georgian';
 import './styles.css';
 import { type Part } from './catalog';
 import PartDetail from './PartDetail';
-import { isLive, listPublicParts } from './repository';
+import { listPublicParts } from './repository';
 import Storefront from './Storefront';
 import { Brand, hasContact, StoreFooter } from './storefront-ui';
 
@@ -74,7 +74,6 @@ function App() {
         target.scrollIntoView();
       }
     }}>გადასვლა შინაარსზე</a>
-    {!isLive && <div className="demo-banner"><span /> დემო კატალოგი <span className="demo-divider">·</span> <span className="demo-note">ნაჩვენებია საილუსტრაციო ნაწილები</span></div>}
     <header className="site-header">
       <div className="shell nav-inner">
         <Brand />

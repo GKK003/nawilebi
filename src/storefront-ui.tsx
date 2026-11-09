@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowUpRight, Mail, MessageCircle, PackageOpen, Phone } from 'lucide-react';
 import type { Part } from './catalog';
 import { stockStatus } from './catalog';
-import { imageUrl, isLive } from './repository';
+import { imageUrl } from './repository';
 
 const phone: string | undefined = import.meta.env.VITE_STORE_PHONE?.trim();
 const email: string | undefined = import.meta.env.VITE_STORE_EMAIL?.trim();
@@ -17,18 +17,18 @@ export function Brand() {
 }
 
 export function ContactLinks({ part }: { part?: Part }) {
-  const note = part ? `გამარჯობა, მაინტერესებს ${part.name} (${part.sku}).\n${window.location.href}` : 'გამარჯობა, მაინტერესებს ავტონაწილი.';
+  const note = part ? `გამარჯობა, მაინტერესებს ${part.name}.\n${window.location.href}` : 'გამარჯობა, მაინტერესებს ავტონაწილი.';
   return <div className="contact-links">
     {whatsapp && <a href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(note)}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> WhatsApp <ArrowUpRight size={14} /></a>}
     {phone && <a href={`tel:${phone.replace(/[^+\d]/g, '')}`}><Phone size={16} /> {phone}</a>}
-    {email && <a href={`mailto:${email}?subject=${encodeURIComponent(part ? part.sku : 'ავტონაწილები')}&body=${encodeURIComponent(note)}`}><Mail size={17} /> ელფოსტა</a>}
+    {email && <a href={`mailto:${email}?subject=${encodeURIComponent(part?.name ?? 'ავტონაწილები')}&body=${encodeURIComponent(note)}`}><Mail size={17} /> ელფოსტა</a>}
   </div>;
 }
 
 export function StoreFooter() {
   return <footer className="site-footer" id="contact">
     <div className="shell footer-inner">
-      <div><Brand /><p>{isLive ? 'მოძებნე ნაწილი და გადაამოწმე მარაგი.' : 'დემო კატალოგი საილუსტრაციო ავტონაწილებით.'}</p></div>
+      <div><Brand /><p>მოძებნე ნაწილი და გადაამოწმე მარაგი.</p></div>
       <div className="footer-links">
         {hasContact && <ContactLinks />}
         <a href="#catalog">კატალოგი</a>

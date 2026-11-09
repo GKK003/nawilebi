@@ -65,10 +65,9 @@
 .inventory .inventory-button.is-destructive:not(:disabled):hover { background: #a02429; border-color: #a02429; color: #fff; }
 .inventory .inventory-icon-btn.is-danger:not(:disabled):hover { border-color: #f3ced2; background: #fff0f1; color: #ad2732; }
 
-.inventory-feedback, .inventory-demo-note { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; padding: 12px 14px; border: 1px solid; border-radius: 10px; font-size: 13px; overflow-wrap: anywhere; }
+.inventory-feedback { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; padding: 12px 14px; border: 1px solid; border-radius: 10px; font-size: 13px; overflow-wrap: anywhere; }
 .inventory-feedback { border-color: #f4d2d6; background: #fff2f3; color: #962830; }
 .inventory-feedback.is-success { border-color: #c1e7d5; background: #ecf9f3; color: #176346; }
-.inventory-demo-note { border-color: #d4defa; background: #ebf1ff; color: #2a4790; }
 
 .inventory-login-wrap { display: grid; place-items: start center; padding: clamp(40px, 10vw, 88px) 20px 60px; }
 .inventory-login { width: min(100%, 440px); padding: clamp(23px, 5vw, 37px); }
