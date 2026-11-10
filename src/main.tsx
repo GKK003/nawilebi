@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import { ArrowUpRight, Search } from 'lucide-react';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/noto-sans-georgian';
@@ -68,7 +69,13 @@ function App() {
   if (adminPage) return <Suspense fallback={<div className="shell loading-page" role="status">იტვირთება…</div>}><Admin showContact={contactSettings} /></Suspense>;
 
   const retry = () => setRevision((version) => version + 1);
+  const catalogPath = detailId ? null : '/';
   return <>
+    {import.meta.env.PROD && <Analytics
+      configString={import.meta.env.VERCEL_OBSERVABILITY_CLIENT_CONFIG}
+      route={part ? '/part/[id]' : catalogPath}
+      path={part ? `/part/${part.id}` : catalogPath}
+    />}
     <a className="skip-link" href="#main-content" onClick={(event) => {
       const target = document.getElementById('main-content');
       if (target) {
