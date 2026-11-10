@@ -94,6 +94,7 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
         <p>მოძებნე სახელით, კატეგორიით ან ავტომობილით და გადაამოწმე ფასი და მარაგი.</p>
         <a className="button primary hero-action" href="#catalog">კატალოგის ნახვა <ArrowDown size={17} /></a>
       </div>
+      <img className="hero-image" src="/images/hero-lineup.webp" alt="Nissan X-Trail, Mitsubishi Airtrek, Lexus RX და Honda CR-V" width="1774" height="887" fetchPriority="high" />
     </section>
 
     <section className="catalog-section" id="catalog" aria-labelledby="catalog-title">
