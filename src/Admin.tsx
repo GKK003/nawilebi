@@ -10,7 +10,7 @@ import {
 } from './catalog'
 import {
   PartSaveUnconfirmedError, deletePart, discardUploads, getAdminSession, imageUrl,
-  listAdminParts, readStoreContact, savePart, saveStoreContact, signIn, signOut, uploadPartImages, type StoreContact,
+  listAdminParts, listPartViewerCounts, readStoreContact, savePart, saveStoreContact, signIn, signOut, uploadPartImages, type StoreContact,
 } from './repository'
 import './admin.css'
 
@@ -108,8 +108,9 @@ const FILTERS: { value: InventoryFilter; label: string }[] = [
   { value: 'out', label: 'ამოწურული' },
 ]
 
-function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
+function InventoryList({ parts, viewerCounts, onNew, onEdit, onRemove, onRefresh }: {
   parts: Part[]
+  viewerCounts: Record<string, number> | null
   onNew: () => void
   onEdit: (part: Part) => void
   onRemove: (part: Part) => void
@@ -173,7 +174,11 @@ function InventoryList({ parts, onNew, onEdit, onRemove, onRefresh }: {
                           <div className="inventory-item-image">
                             {part.images[0] ? <img src={imageUrl(part.images[0].path)} alt="" loading="lazy" /> : <Package size={22} />}
                           </div>
-                          <div><button className="inventory-part-link" onClick={() => onEdit(part)}>{part.name}</button><span>{part.category}</span></div>
+                          <div>
+                            <button className="inventory-part-link" onClick={() => onEdit(part)}>{part.name}</button>
+                            <span>{part.category}</span>
+                            {viewerCounts && <span><Eye size={13} aria-hidden="true" /> {countFormatter.format(viewerCounts[part.id] ?? 0)} მნახველი</span>}
+                          </div>
                         </div>
                       </td>
                       <td className="inventory-table-price" role="cell">{formatPrice(part.price)}</td>
@@ -530,6 +535,7 @@ function ContactSettings() {
 export default function Admin({ showContact }: { showContact: boolean }) {
   const [session, setSession] = useState<AdminSession | null | undefined>(undefined)
   const [parts, setParts] = useState<Part[] | null>(null)
+  const [viewerCounts, setViewerCounts] = useState<Record<string, number> | null>(null)
   const [editor, setEditor] = useState<{ part: Part | null } | null>(null)
   const [toDelete, setToDelete] = useState<Part | null>(null)
   const [notice, setNotice] = useState('')
@@ -558,6 +564,9 @@ export default function Admin({ showContact }: { showContact: boolean }) {
     }).catch(error => {
       if (current) setError(errorMessage(error, 'ინვენტარის ჩატვირთვა ვერ მოხერხდა.'))
     })
+    listPartViewerCounts().then(counts => {
+      if (current) setViewerCounts(counts)
+    }).catch(() => {})
     return () => { current = false }
   }, [session, attempt, showContact])
 
@@ -582,6 +591,7 @@ export default function Admin({ showContact }: { showContact: boolean }) {
       await signOut()
       setSession(null)
       setParts(null)
+      setViewerCounts(null)
       setEditor(null)
       setNotice('')
     } catch (error) {
@@ -612,7 +622,7 @@ export default function Admin({ showContact }: { showContact: boolean }) {
             {error && <Feedback>{error}</Feedback>}
             {notice && <Feedback success>{notice}</Feedback>}
             {editor ? <PartEditor key={editor.part?.id ?? 'new'} part={editor.part} onCancel={() => setEditor(null)} onSaved={handleSaved} />
-              : parts ? <InventoryList parts={parts} onNew={() => openEditor(null)} onEdit={openEditor} onRemove={setToDelete} onRefresh={refresh} />
+              : parts ? <InventoryList parts={parts} viewerCounts={viewerCounts} onNew={() => openEditor(null)} onEdit={openEditor} onRemove={setToDelete} onRefresh={refresh} />
               : error ? <button className="inventory-button" type="button" onClick={refresh}>ხელახლა ჩატვირთვა</button>
               : <p role="status">ინვენტარი იტვირთება…</p>}
             {toDelete && <DeleteDialog part={toDelete} onClose={() => setToDelete(null)} onDeleted={deleted => {

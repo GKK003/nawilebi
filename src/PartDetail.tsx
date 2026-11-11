@@ -1,12 +1,25 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, ChevronRight, Link2, Package, PackageOpen } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, ChevronRight, Eye, Link2, Package, PackageOpen } from 'lucide-react';
 import { CONDITIONS, formatPrice, partTitle, vehicleLabel, yearLabel, type Part } from './catalog';
 import { ContactLinks, hasContact, PartPhoto, StockPill } from './storefront-ui';
-import type { StoreContact } from './repository';
+import { recordPartView, type StoreContact } from './repository';
+
+const viewerFormatter = new Intl.NumberFormat('ka-GE');
 
 export default function PartDetail({ contact, part, loading, error, retry }: { contact: StoreContact; part?: Part; loading: boolean; error: string; retry: () => void }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'manual'>('idle');
+  const [viewers, setViewers] = useState<number | null>(null);
+  const publishedPartId = part?.is_published && !loading && !error ? part.id : null;
+
+  useEffect(() => {
+    if (!publishedPartId) return;
+    let current = true;
+    recordPartView(publishedPartId).then((count) => {
+      if (current) setViewers(count);
+    }).catch(() => {});
+    return () => { current = false; };
+  }, [publishedPartId]);
 
   async function copyPartLink() {
     try {
@@ -45,7 +58,10 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
         {photos.length > 1 && <div className="thumbnails">{photos.map(({ path }, photo) => <button key={path} type="button" aria-label={`ფოტო ${photo + 1}`} aria-pressed={photo === index} onClick={() => setPhotoIndex(photo)}><PartPhoto path={path} alt="" /></button>)}</div>}
       </section>
       <section className="detail-info" aria-labelledby="part-title">
-        <div className="detail-meta"><StockPill quantity={part.quantity} /></div>
+        <div className="detail-meta">
+          <StockPill quantity={part.quantity} />
+          {viewers !== null && <span className="part-viewers"><Eye size={15} aria-hidden="true" /> {viewerFormatter.format(viewers)} მნახველი</span>}
+        </div>
         <h1 id="part-title">{partTitle(part)}</h1>
         <div className="detail-price"><strong>{formatPrice(part.price)}</strong><span><Package size={17} /> მარაგი: {part.quantity} ც.</span></div>
         {part.description && <p className="description">{part.description}</p>}

@@ -102,6 +102,33 @@ async function listParts(publishedOnly: boolean) {
 export const listPublicParts = () => listParts(true);
 export const listAdminParts = () => listParts(false);
 
+function getAnonymousBrowserId() {
+  const storageKey = 'nawilebi-viewer-id';
+  try {
+    const existing = localStorage.getItem(storageKey);
+    if (existing && /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(existing)) return existing;
+
+    const id = crypto.randomUUID();
+    localStorage.setItem(storageKey, id);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+export async function recordPartView(partId: string): Promise<number | null> {
+  const { data, error } = await client().rpc('record_part_view', {
+    target_part_id: partId,
+    browser_id: getAnonymousBrowserId(),
+  });
+  return !error && typeof data === 'number' ? data : null;
+}
+
+export async function listPartViewerCounts(): Promise<Record<string, number> | null> {
+  const { data, error } = await client().rpc('list_part_viewer_counts');
+  return error ? null : data;
+}
+
 export function imageUrl(path: string) {
   return client().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
