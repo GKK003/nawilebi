@@ -5,7 +5,7 @@ import {
   MapPin, Plus, RefreshCw, Search, Trash2, Upload, X,
 } from 'lucide-react'
 import {
-  CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES,
+  CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_IMAGE_MB,
   formatPrice, stockStatus, type Part, type PartInput,
 } from './catalog'
 import {
@@ -237,7 +237,7 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
       return
     }
     if (chosen.some(file => !IMAGE_MIME_TYPES.includes(file.type) || file.size > MAX_IMAGE_BYTES || file.size === 0)) {
-      setImageError('აირჩიეთ JPG, PNG, WebP ან AVIF ფოტო, მაქსიმუმ 8 მბ თითო ფაილზე.')
+      setImageError(`აირჩიეთ JPG, PNG, WebP ან AVIF ფოტო, მაქსიმუმ ${MAX_IMAGE_MB} მბ თითო ფაილზე.`)
       return
     }
     const added = chosen.map(file => {
@@ -390,7 +390,7 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
                   }} />
                   <ImagePlus size={25} />
                   <strong>აირჩიეთ ფოტოები</strong>
-                  <span>JPG, PNG, WebP ან AVIF · თითოეული მაქს. 8 მბ</span>
+                  <span>JPG, PNG, WebP ან AVIF · თითოეული მაქს. {MAX_IMAGE_MB} მბ</span>
                 </label>
               )}
             </section>

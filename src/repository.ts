@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { IMAGE_MIME_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES, type Part, type PartImage, type PartInput } from './catalog';
+import { IMAGE_MIME_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_MB, MAX_IMAGES, type Part, type PartImage, type PartInput } from './catalog';
 import { supabaseProject } from './supabase-project';
 
 const { url, key } = supabaseProject;
 const bucket = 'part-images';
+const uploadChunkBytes = 6 * 1024 * 1024;
+const imageCacheSeconds = '31536000';
 const partColumns = 'id,name,category,make,model,year_from,year_to,oem_number,condition,price,quantity,description,is_published,is_featured,images,created_at,updated_at';
 const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
 const staleMessage = 'ჩანაწერი უკვე შეიცვალა. განაახლე სია და სცადე ხელახლა.';
@@ -133,19 +135,54 @@ export function imageUrl(path: string) {
   return client().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
+async function uploadLargeImage(path: string, file: File) {
+  const { Upload } = await import('tus-js-client');
+  const endpoint = new URL('/storage/v1/upload/resumable', url);
+  if (/^[a-z0-9-]+\.supabase\.co$/.test(endpoint.hostname)) {
+    endpoint.hostname = endpoint.hostname.replace(/\.supabase\.co$/, '.storage.supabase.co');
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new Upload(file, {
+      endpoint: endpoint.href,
+      chunkSize: uploadChunkBytes,
+      retryDelays: [0, 1000, 3000, 5000, 10000],
+      uploadDataDuringCreation: true,
+      storeFingerprintForResuming: false,
+      metadata: { bucketName: bucket, objectName: path, contentType: file.type, cacheControl: imageCacheSeconds },
+      async onBeforeRequest(request) {
+        const { data: { session } } = await client().auth.getSession();
+        if (!session) throw new Error('ფოტოების ასატვირთად ხელახლა შედი ანგარიშში.');
+        request.setHeader('Authorization', `Bearer ${session.access_token}`);
+        if (key) request.setHeader('apikey', key);
+      },
+      onError: reject,
+      onSuccess: () => resolve(),
+    });
+    upload.start();
+  });
+}
+
 export async function uploadPartImages(partId: string, files: File[]): Promise<PartImage[]> {
   if (!files.length) return [];
   if (files.length > MAX_IMAGES || files.some(({ type, size }) => !IMAGE_MIME_TYPES.includes(type) || size === 0 || size > MAX_IMAGE_BYTES)) {
-    throw new Error('ატვირთე მაქსიმუმ 8 ფოტო (JPG, PNG, WebP ან AVIF, თითოეული 8 მბ-მდე).');
+    throw new Error(`ატვირთე მაქსიმუმ ${MAX_IMAGES} ფოტო (JPG, PNG, WebP ან AVIF, თითოეული ${MAX_IMAGE_MB} მბ-მდე).`);
   }
   const images = files.map(({ type }) => ({ path: `${partId}/${crypto.randomUUID()}.${extensions[type]}`, alt: '' }));
 
   const uploads = await Promise.allSettled(images.map(async ({ path }, index) => {
-    const { error } = await client().storage.from(bucket).upload(path, files[index], { cacheControl: '31536000' });
+    const file = files[index];
+    if (file.size > uploadChunkBytes) return uploadLargeImage(path, file);
+    const { error } = await client().storage.from(bucket).upload(path, file, { cacheControl: imageCacheSeconds });
     if (error) throw error;
   }));
-  if (uploads.some(({ status }) => status === 'rejected')) {
+  const failures = uploads.filter((result) => result.status === 'rejected');
+  if (failures.length) {
     await cleanupImages(images);
+    const exceedsStorageLimit = failures.some(({ reason }) =>
+      Number(reason?.statusCode ?? reason?.originalResponse?.getStatus()) === 413,
+    );
+    if (exceedsStorageLimit) throw new Error(`Supabase-ის საცავში თითო ფაილის ლიმიტი ${MAX_IMAGE_MB} მბ-მდე გაზარდე.`);
     throw new Error('ფოტოების ატვირთვა ვერ მოხერხდა. სცადე ხელახლა.');
   }
   return images;

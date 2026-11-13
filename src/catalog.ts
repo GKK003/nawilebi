@@ -5,7 +5,8 @@ export const CONDITIONS = [
 ] as const;
 
 export const MAX_IMAGES = 8;
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+export const MAX_IMAGE_MB = 30;
+export const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
 export const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
 export type PartCondition = typeof CONDITIONS[number]['value'];

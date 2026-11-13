@@ -45,6 +45,10 @@ Supabase enforces access in the database. Only accounts on the allowlist can rea
 
 Run the [contact migration](supabase/migrations/20261110000300_store_contact.sql) once in the project's SQL Editor. It gives visitors read access and restricts changes to catalog admins. Sign in and open **კონტაქტი** in the inventory heading to publish a phone number, address, or map link. An address creates a Google Maps search link by default. Enter the location's share link to show a specific map pin.
 
+## Photo upload limit
+
+The admin form accepts photos up to 30 MB (31,457,280 bytes). In Supabase Storage, set the `part-images` bucket’s file size limit to at least 30 MB and make sure the project’s global Storage limit is at least as high. [Supabase upload limits](https://supabase.com/docs/guides/storage/uploads/file-limits)
+
 ## Configuration and hosting
 
 | Variable | Value |
