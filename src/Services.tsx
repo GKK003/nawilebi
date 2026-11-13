@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Wrench } from 'lucide-react';
 import { formatServicePrice, type MechanicService } from './catalog';
 import { listServices, type StoreContact } from './repository';
-import { ContactLinks, hasContact } from './storefront-ui';
+import { ContactLinks, hasContact, PartPhoto } from './storefront-ui';
 
 export default function Services({ contact }: { contact: StoreContact }) {
   const [services, setServices] = useState<MechanicService[] | null>(null);
@@ -37,6 +37,11 @@ export default function Services({ contact }: { contact: StoreContact }) {
           {service.description && <p>{service.description}</p>}
         </div>
         <strong className="service-price">{formatServicePrice(service)}</strong>
+        {service.images.length > 0 && <div className="service-photos">
+          {service.images.map((photo, index) => <div className="service-photo" key={photo.path}>
+            <PartPhoto path={photo.path} alt={photo.alt || `${service.name} · ფოტო ${index + 1}`} variant="card" />
+          </div>)}
+        </div>}
       </li>)}</ul>}
   </main>;
 }

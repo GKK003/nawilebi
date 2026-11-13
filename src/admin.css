@@ -129,6 +129,7 @@
 .inventory-form-card { display: grid; gap: 16px; padding: clamp(15px, 3vw, 21px); }
 .inventory-contact-form { max-width: 660px; }
 .inventory-contact-form > .inventory-subtitle { margin: -8px 0 0; }
+.inventory-contact-form :is(.inventory-photo-heading, .inventory-photo-grid) { margin-bottom: 10px; }
 .inventory-services { margin: 0; padding: 0; list-style: none; }
 .inventory-services > li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px 14px; padding: 14px; overflow-wrap: anywhere; }
 .inventory-services > li + li { border-top: 1px solid var(--inventory-border); }

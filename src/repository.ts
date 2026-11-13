@@ -10,6 +10,8 @@ const partColumns = 'id,name,category,make,model,year_from,year_to,oem_number,co
 const serviceColumns = 'id,name,description,price,price_from,is_published,updated_at';
 const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
 const staleMessage = 'ჩანაწერი უკვე შეიცვალა. განაახლე სია და სცადე ხელახლა.';
+const servicePhotoMigrationMessage = 'Supabase-ში მომსახურების ფოტოების მიგრაციაა გასაშვები.';
+type ServiceRow = Omit<MechanicService, 'images'> & { images?: PartImage[] };
 
 export interface StoreContact {
   phone: string | null;
@@ -26,6 +28,12 @@ export const defaultStoreContact: StoreContact = {
 export class PartSaveUnconfirmedError extends Error {
   constructor() {
     super('ნაწილის შენახვა ვერ დადასტურდა. განაახლე სია და გადაამოწმე ჩანაწერი.');
+  }
+}
+
+class ServiceSaveUnconfirmedError extends Error {
+  constructor() {
+    super('მომსახურების შენახვა ვერ დადასტურდა. განაახლე სია და გადაამოწმე ჩანაწერი.');
   }
 }
 
@@ -106,24 +114,54 @@ export const listPublicParts = () => listParts(true);
 export const listAdminParts = () => listParts(false);
 
 export async function listServices(publishedOnly: boolean): Promise<MechanicService[]> {
-  let query = client().from('mechanic_services').select(serviceColumns).order('created_at', { ascending: false }).order('id');
-  if (publishedOnly) query = query.eq('is_published', true);
-  const { data, error } = await query;
+  const read = (columns: string) => {
+    const query = client().from('mechanic_services').select(columns).order('created_at', { ascending: false }).order('id');
+    if (publishedOnly) query.eq('is_published', true);
+    return query.overrideTypes<ServiceRow[], { merge: false }>();
+  };
+  let { data, error } = await read(`${serviceColumns},images`);
+  if (error?.code === '42703' || error?.code === 'PGRST204') {
+    ({ data, error } = await read(serviceColumns));
+  }
   if (error?.code === 'PGRST205' || error?.code === '42P01') {
     if (publishedOnly) return [];
     throw new Error('Supabase-ში ავტოსერვისის მიგრაციაა გასაშვები.');
   }
   if (error) throw new Error('მომსახურებები ვერ ჩაიტვირთა.');
-  return data as MechanicService[];
+  return (data ?? []).map((service) => ({ ...service, images: service.images ?? [] }));
 }
 
-export async function saveService(input: ServiceInput, existing: MechanicService | null): Promise<MechanicService> {
+export async function saveService(input: ServiceInput, existing: MechanicService | null, id: string, photos: (PartImage | File)[]): Promise<MechanicService> {
   const table = client().from('mechanic_services');
-  const query = existing ? table.update(input).eq('id', existing.id).eq('updated_at', existing.updated_at) : table.insert(input);
-  const { data, error } = await query.select(serviceColumns).maybeSingle();
-  if (error) throw new Error('მომსახურება ვერ შეინახა. გადაამოწმე მონაცემები და სცადე ხელახლა.');
-  if (!data) throw new Error(staleMessage);
-  return data as MechanicService;
+  const files = photos.filter((photo): photo is File => photo instanceof File);
+  if (files.length) {
+    const { error } = await table.select('images').limit(0);
+    if (error?.code === '42703' || error?.code === 'PGRST204') throw new Error(servicePhotoMigrationMessage);
+    if (error) throw new Error('მომსახურების ფოტოების ატვირთვა ვერ დაიწყო. სცადე ხელახლა.');
+  }
+  const uploaded = await uploadCatalogImages(`services/${id}`, files);
+  try {
+    let uploadIndex = 0;
+    const images = photos.map((photo) => photo instanceof File ? uploaded[uploadIndex++] : photo);
+    const hasImages = images.length > 0 || Boolean(existing?.images.length);
+    const values: ServiceInput & { images?: PartImage[] } = hasImages ? { ...input, images } : input;
+    const insertValues = hasImages ? { id, ...values } : values;
+    const query = existing ? table.update(values).eq('id', id).eq('updated_at', existing.updated_at)
+      : table.insert(insertValues);
+    const { data, error } = await query.select(hasImages ? `${serviceColumns},images` : serviceColumns).maybeSingle()
+      .overrideTypes<ServiceRow, { merge: false }>()
+      .then((result) => result, () => { throw new ServiceSaveUnconfirmedError(); });
+    if (error?.code === '42703' || error?.code === 'PGRST204') throw new Error(servicePhotoMigrationMessage);
+    if (error?.code === '23505') throw new Error('ჩანაწერი უკვე შენახულია. განაახლე სია.');
+    if (error?.code?.startsWith('23') || error?.code === '42501') throw new Error('მომსახურება ვერ შეინახა. გადაამოწმე მონაცემები და წვდომა.');
+    if (error) throw new ServiceSaveUnconfirmedError();
+    if (!data) throw new Error(staleMessage);
+    await cleanupImages(existing?.images.filter(({ path }) => !images.some((image) => image.path === path)) ?? []);
+    return { ...data, images };
+  } catch (error) {
+    if (!(error instanceof ServiceSaveUnconfirmedError)) await cleanupImages(uploaded);
+    throw error;
+  }
 }
 
 export async function deleteService(service: MechanicService) {
@@ -131,6 +169,7 @@ export async function deleteService(service: MechanicService) {
     .eq('id', service.id).eq('updated_at', service.updated_at).select('id').maybeSingle();
   if (error) throw new Error('მომსახურება ვერ წაიშალა. სცადე ხელახლა.');
   if (!data) throw new Error(staleMessage);
+  await cleanupImages(service.images);
 }
 
 function getAnonymousBrowserId() {
@@ -192,12 +231,12 @@ async function uploadLargeImage(path: string, file: File) {
   });
 }
 
-export async function uploadPartImages(partId: string, files: File[]): Promise<PartImage[]> {
+async function uploadCatalogImages(folder: string, files: File[]): Promise<PartImage[]> {
   if (!files.length) return [];
   if (files.length > MAX_IMAGES || files.some(({ type, size }) => !IMAGE_MIME_TYPES.includes(type) || size === 0 || size > MAX_IMAGE_BYTES)) {
     throw new Error(`ატვირთე მაქსიმუმ ${MAX_IMAGES} ფოტო (JPG, PNG, WebP ან AVIF, თითოეული ${MAX_IMAGE_MB} მბ-მდე).`);
   }
-  const images = files.map(({ type }) => ({ path: `${partId}/${crypto.randomUUID()}.${extensions[type]}`, alt: '' }));
+  const images = files.map(({ type }) => ({ path: `${folder}/${crypto.randomUUID()}.${extensions[type]}`, alt: '' }));
 
   const uploads = await Promise.allSettled(images.map(async ({ path }, index) => {
     const file = files[index];
@@ -217,6 +256,8 @@ export async function uploadPartImages(partId: string, files: File[]): Promise<P
   return images;
 }
 
+export const uploadPartImages = (partId: string, files: File[]) => uploadCatalogImages(partId, files);
+
 export async function discardUploads(images: PartImage[]) {
   if (!images.length) return;
   // Storage RLS protects referenced photos, including uploads committed before a dropped response.
@@ -229,7 +270,7 @@ async function cleanupImages(images: PartImage[]) {
     await discardUploads(images);
   } catch (error) {
     // The catalog mutation already succeeded. Keep the result and report cleanup separately.
-    console.warn('Part image cleanup failed', error);
+    console.warn('Catalog image cleanup failed', error);
   }
 }
 

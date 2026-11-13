@@ -49,6 +49,7 @@ export interface ServiceInput {
 export interface MechanicService extends ServiceInput {
   id: string;
   updated_at: string;
+  images: PartImage[];
 }
 
 const priceFormat = new Intl.NumberFormat('ka-GE', { maximumFractionDigits: 2 });

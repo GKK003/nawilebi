@@ -10,7 +10,7 @@
         "protocol": "https",
         "hostname": "sqgonwlmvcpiywxnmkcu.supabase.co",
         "port": "",
-        "pathname": "^/storage/v1/object/public/part-images/[^/]+/[^/]+$",
+        "pathname": "^/storage/v1/object/public/part-images/(services/)?[^/]+/[^/]+$",
         "search": ""
       }
     ]
