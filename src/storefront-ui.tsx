@@ -49,7 +49,6 @@ export function StockPill({ quantity }: { quantity: number }) {
 
 const photoLayouts = {
   thumbnail: { widths: [96, 160], sizes: '74px' },
-  service: { widths: [320, 480, 640, 960], sizes: '(max-width: 570px) calc(100vw - 32px), 320px' },
   card: {
     widths: [320, 480, 640, 960],
     sizes: '(max-width: 350px) calc(100vw - 32px), (max-width: 570px) calc((100vw - 42px) / 2), (max-width: 820px) calc((100vw - 72px) / 3), (max-width: 1070px) calc((100vw - 285px) / 3), (max-width: 1360px) calc((100vw - 360px) / 3), 332px',

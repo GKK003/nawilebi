@@ -13,20 +13,19 @@ function ServiceCard({ service }: { service: MechanicService }) {
     setPhotoIndex((current) => (current + direction + images.length) % images.length);
   }
 
-  return <li className={`service-card${photo ? ' has-photo' : ''}`}>
-    {photo && <div className="service-media" role="group" aria-label={`ფოტოები · ${service.name}`}>
-      <PartPhoto path={photo.path} alt={photo.alt || `${service.name} · ფოტო ${photoIndex + 1}`} variant="service" />
-      {images.length > 1 && <div className="service-photo-controls">
+  return <li className="product-card service-card">
+    <div className="card-photo service-media">
+      <PartPhoto path={photo?.path} alt={photo?.alt || `${service.name} · ფოტო ${photoIndex + 1}`} variant="card" />
+      {images.length > 1 && <div className="service-photo-controls" role="group" aria-label={`ფოტოები · ${service.name}`}>
         <button type="button" aria-label="წინა ფოტო" onClick={() => movePhoto(-1)}><ChevronLeft size={18} /></button>
         <span aria-live="polite">{photoIndex + 1} / {images.length}</span>
         <button type="button" aria-label="შემდეგი ფოტო" onClick={() => movePhoto(1)}><ChevronRight size={18} /></button>
       </div>}
-    </div>}
-    <div className="service-card-details">
-      {!photo && <div className="service-card-icon" aria-hidden="true"><Wrench size={20} /></div>}
+    </div>
+    <div className="card-content">
       <h2>{service.name}</h2>
-      {service.description && <p>{service.description}</p>}
-      <div className="service-card-price"><strong>{formatServicePrice(service)}</strong></div>
+      {service.description && <p className="service-description">{service.description}</p>}
+      <div className="card-bottom"><strong className={service.price === null ? 'contact-price' : ''}>{formatServicePrice(service)}</strong></div>
     </div>
   </li>;
 }
@@ -57,6 +56,6 @@ export default function Services({ contact }: { contact: StoreContact }) {
       <button className="button secondary" onClick={() => { setError(''); setAttempt((value) => value + 1); }}>ხელახლა ცდა</button>
     </div> : services === null ? <p role="status">იტვირთება…</p>
       : services.length === 0 ? <div className="empty-state"><Wrench size={28} /><strong>მომსახურებები ჯერ არ დამატებულა</strong></div>
-      : <ul className="service-list">{services.map((service) => <ServiceCard service={service} key={service.id} />)}</ul>}
+      : <ul className="product-grid service-list">{services.map((service) => <ServiceCard service={service} key={service.id} />)}</ul>}
   </main>;
 }
