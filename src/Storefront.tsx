@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowDown, ArrowRight, Grid2X2, PackageOpen, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, Grid2X2, PackageOpen, Search, SlidersHorizontal, Wrench, X } from 'lucide-react';
 import { CONDITIONS, formatPrice, partTitle, yearLabel, type Part, type PartCondition } from './catalog';
 import { PartPhoto, StockPill } from './storefront-ui';
 
@@ -92,7 +92,10 @@ export default function Storefront({ parts, loading, error, retry, hidden }: {
         <div className="hero-kicker"><span /> ავტონაწილების კატალოგი</div>
         <h1 id="hero-title">იპოვე საჭირო <span>ავტონაწილი.</span></h1>
         <p>მოძებნე სახელით, კატეგორიით ან ავტომობილით და გადაამოწმე ფასი და მარაგი.</p>
-        <a className="button primary hero-action" href="#catalog">კატალოგის ნახვა <ArrowDown size={17} /></a>
+        <div className="hero-actions">
+          <a className="button primary hero-action" href="#catalog">კატალოგის ნახვა <ArrowDown size={17} /></a>
+          <a className="button hero-action hero-services" href="#services"><Wrench size={17} /> ავტოსერვისი</a>
+        </div>
       </div>
       {!hidden && <img className="hero-image" src="/images/hero-lineup.webp" alt="Nissan X-Trail, Mitsubishi Airtrek, Lexus RX და Honda CR-V" width="1774" height="887" fetchPriority="high" />}
     </section>

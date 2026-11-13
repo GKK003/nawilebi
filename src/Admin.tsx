@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronRight, CircleAlert,
   Eye, EyeOff, ImagePlus, LayoutGrid, LockKeyhole, LogOut, Package, Pencil,
-  MapPin, Plus, RefreshCw, Search, Trash2, Upload, X,
+  MapPin, Plus, RefreshCw, Search, Trash2, Upload, Wrench, X,
 } from 'lucide-react'
 import {
   CONDITIONS, IMAGE_MIME_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_IMAGE_MB,
@@ -13,6 +13,7 @@ import {
   listAdminParts, listPartViewerCounts, readStoreContact, savePart, saveStoreContact, signIn, signOut, uploadPartImages, type StoreContact,
 } from './repository'
 import { PartPhoto } from './storefront-ui'
+import AdminServices from './AdminServices'
 import './admin.css'
 
 type AdminSession = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>
@@ -139,6 +140,7 @@ function InventoryList({ parts, viewerCounts, onNew, onEdit, onRemove, onRefresh
         </div>
         <div className="inventory-heading-actions">
           <a className="inventory-button" href="#admin/contact"><MapPin size={17} /> კონტაქტი</a>
+          <a className="inventory-button" href="#admin/services"><Wrench size={17} /> ავტოსერვისი</a>
           <button className="inventory-button is-primary" onClick={onNew}><Plus size={19} /> ნაწილის დამატება</button>
         </div>
       </div>
@@ -535,7 +537,7 @@ function ContactSettings() {
   </>
 }
 
-export default function Admin({ showContact }: { showContact: boolean }) {
+export default function Admin({ showContact, showServices }: { showContact: boolean; showServices: boolean }) {
   const [session, setSession] = useState<AdminSession | null | undefined>(undefined)
   const [parts, setParts] = useState<Part[] | null>(null)
   const [viewerCounts, setViewerCounts] = useState<Record<string, number> | null>(null)
@@ -560,7 +562,7 @@ export default function Admin({ showContact }: { showContact: boolean }) {
   }, [])
 
   useEffect(() => {
-    if (!session || showContact) return
+    if (!session || showContact || showServices) return
     let current = true
     listAdminParts().then(result => {
       if (current) setParts(result)
@@ -571,7 +573,7 @@ export default function Admin({ showContact }: { showContact: boolean }) {
       if (current) setViewerCounts(counts)
     }).catch(() => {})
     return () => { current = false }
-  }, [session, attempt, showContact])
+  }, [session, attempt, showContact, showServices])
 
   function openEditor(part: Part | null) {
     setEditor({ part })
@@ -621,7 +623,7 @@ export default function Admin({ showContact }: { showContact: boolean }) {
       </>}
       {session && (
         <main className="inventory-content" id="main-content">
-          {showContact ? <ContactSettings /> : <>
+          {showServices ? <AdminServices /> : showContact ? <ContactSettings /> : <>
             {error && <Feedback>{error}</Feedback>}
             {notice && <Feedback success>{notice}</Feedback>}
             {editor ? <PartEditor key={editor.part?.id ?? 'new'} part={editor.part} onCancel={() => setEditor(null)} onSaved={handleSaved} />

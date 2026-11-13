@@ -35,6 +35,7 @@ export function StoreFooter() {
       <div><Brand /><p>მოძებნე ნაწილი და გადაამოწმე მარაგი.</p></div>
       <div className="footer-links">
         <a href="#catalog">კატალოგი</a>
+        <a href="#services">ავტოსერვისი</a>
         <a href="#admin">ადმინისტრაცია <ArrowUpRight size={15} /></a>
       </div>
     </div>

@@ -38,10 +38,27 @@ export interface Part {
 
 export type PartInput = Omit<Part, 'created_at' | 'updated_at'>;
 
+export interface ServiceInput {
+  name: string;
+  description: string;
+  price: number | null;
+  price_from: boolean;
+  is_published: boolean;
+}
+
+export interface MechanicService extends ServiceInput {
+  id: string;
+  updated_at: string;
+}
+
 const priceFormat = new Intl.NumberFormat('ka-GE', { maximumFractionDigits: 2 });
 
 export function formatPrice(price: number | null) {
   return price === null ? 'ფასი შეთანხმებით' : `${priceFormat.format(price)} ₾`;
+}
+
+export function formatServicePrice({ price, price_from }: Pick<ServiceInput, 'price' | 'price_from'>) {
+  return price !== null && price_from ? `${priceFormat.format(price)} ₾-დან` : formatPrice(price);
 }
 
 export function stockStatus(quantity: number): { label: string; tone: 'available' | 'low' | 'out' } {

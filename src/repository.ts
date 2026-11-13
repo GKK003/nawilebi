@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { IMAGE_MIME_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_MB, MAX_IMAGES, type Part, type PartImage, type PartInput } from './catalog';
+import { IMAGE_MIME_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_MB, MAX_IMAGES, type MechanicService, type Part, type PartImage, type PartInput, type ServiceInput } from './catalog';
 import { supabaseProject } from './supabase-project';
 
 const { url, key } = supabaseProject;
@@ -7,6 +7,7 @@ const bucket = 'part-images';
 const uploadChunkBytes = 6 * 1024 * 1024;
 const imageCacheSeconds = '31536000';
 const partColumns = 'id,name,category,make,model,year_from,year_to,oem_number,condition,price,quantity,description,is_published,is_featured,images,created_at,updated_at';
+const serviceColumns = 'id,name,description,price,price_from,is_published,updated_at';
 const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
 const staleMessage = 'ჩანაწერი უკვე შეიცვალა. განაახლე სია და სცადე ხელახლა.';
 
@@ -103,6 +104,34 @@ async function listParts(publishedOnly: boolean) {
 
 export const listPublicParts = () => listParts(true);
 export const listAdminParts = () => listParts(false);
+
+export async function listServices(publishedOnly: boolean): Promise<MechanicService[]> {
+  let query = client().from('mechanic_services').select(serviceColumns).order('created_at', { ascending: false }).order('id');
+  if (publishedOnly) query = query.eq('is_published', true);
+  const { data, error } = await query;
+  if (error?.code === 'PGRST205' || error?.code === '42P01') {
+    if (publishedOnly) return [];
+    throw new Error('Supabase-ში ავტოსერვისის მიგრაციაა გასაშვები.');
+  }
+  if (error) throw new Error('მომსახურებები ვერ ჩაიტვირთა.');
+  return data as MechanicService[];
+}
+
+export async function saveService(input: ServiceInput, existing: MechanicService | null): Promise<MechanicService> {
+  const table = client().from('mechanic_services');
+  const query = existing ? table.update(input).eq('id', existing.id).eq('updated_at', existing.updated_at) : table.insert(input);
+  const { data, error } = await query.select(serviceColumns).maybeSingle();
+  if (error) throw new Error('მომსახურება ვერ შეინახა. გადაამოწმე მონაცემები და სცადე ხელახლა.');
+  if (!data) throw new Error(staleMessage);
+  return data as MechanicService;
+}
+
+export async function deleteService(service: MechanicService) {
+  const { data, error } = await client().from('mechanic_services').delete()
+    .eq('id', service.id).eq('updated_at', service.updated_at).select('id').maybeSingle();
+  if (error) throw new Error('მომსახურება ვერ წაიშალა. სცადე ხელახლა.');
+  if (!data) throw new Error(staleMessage);
+}
 
 function getAnonymousBrowserId() {
   const storageKey = 'nawilebi-viewer-id';

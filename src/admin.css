@@ -129,6 +129,14 @@
 .inventory-form-card { display: grid; gap: 16px; padding: clamp(15px, 3vw, 21px); }
 .inventory-contact-form { max-width: 660px; }
 .inventory-contact-form > .inventory-subtitle { margin: -8px 0 0; }
+.inventory-services { margin: 0; padding: 0; list-style: none; }
+.inventory-services > li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px 14px; padding: 14px; overflow-wrap: anywhere; }
+.inventory-services > li + li { border-top: 1px solid var(--inventory-border); }
+.inventory-services .inventory-badge { justify-self: start; }
+@media (max-width: 570px) {
+  .inventory-services > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .inventory-services .inventory-row-actions { grid-column: 2; grid-row: 1 / 3; }
+}
 .inventory-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .inventory-field { display: grid; align-content: start; gap: 6px; color: var(--inventory-ink); font-size: 13px; font-weight: 750; }
 .inventory-field.is-full { grid-column: 1 / -1; }
