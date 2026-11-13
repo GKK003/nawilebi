@@ -52,10 +52,10 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
     <div className="detail-grid">
       <section className="gallery" aria-label="ნაწილის ფოტოები">
         <div className="gallery-main">
-          <PartPhoto path={activePhoto?.path} alt={activePhoto?.alt || part.name} />
+          <PartPhoto path={activePhoto?.path} alt={activePhoto?.alt || part.name} variant="gallery" />
           {photos.length > 1 && <div className="gallery-controls"><button className="icon-button" type="button" aria-label="წინა ფოტო" onClick={() => movePhoto(-1)}><ArrowLeft size={19} /></button><span>{index + 1} / {photos.length}</span><button className="icon-button" type="button" aria-label="შემდეგი ფოტო" onClick={() => movePhoto(1)}><ArrowRight size={19} /></button></div>}
         </div>
-        {photos.length > 1 && <div className="thumbnails">{photos.map(({ path }, photo) => <button key={path} type="button" aria-label={`ფოტო ${photo + 1}`} aria-pressed={photo === index} onClick={() => setPhotoIndex(photo)}><PartPhoto path={path} alt="" /></button>)}</div>}
+        {photos.length > 1 && <div className="thumbnails">{photos.map(({ path }, photo) => <button key={path} type="button" aria-label={`ფოტო ${photo + 1}`} aria-pressed={photo === index} onClick={() => setPhotoIndex(photo)}><PartPhoto path={path} alt="" variant="thumbnail" /></button>)}</div>}
       </section>
       <section className="detail-info" aria-labelledby="part-title">
         <div className="detail-meta">

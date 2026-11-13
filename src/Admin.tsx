@@ -9,15 +9,16 @@ import {
   formatPrice, stockStatus, type Part, type PartInput,
 } from './catalog'
 import {
-  PartSaveUnconfirmedError, deletePart, discardUploads, getAdminSession, imageUrl,
+  PartSaveUnconfirmedError, deletePart, discardUploads, getAdminSession,
   listAdminParts, listPartViewerCounts, readStoreContact, savePart, saveStoreContact, signIn, signOut, uploadPartImages, type StoreContact,
 } from './repository'
+import { PartPhoto } from './storefront-ui'
 import './admin.css'
 
 type AdminSession = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>
 type PartImage = Part['images'][number]
 type DraftImage =
-  | { id: string; url: string; alt: string; path: string; file?: never }
+  | { id: string; alt: string; path: string; file?: never }
   | { id: string; url: string; alt: string; file: File; path?: never }
 
 const countFormatter = new Intl.NumberFormat('ka-GE')
@@ -172,7 +173,7 @@ function InventoryList({ parts, viewerCounts, onNew, onEdit, onRemove, onRefresh
                       <td className="inventory-table-part" role="cell">
                         <div className="inventory-item">
                           <div className="inventory-item-image">
-                            {part.images[0] ? <img src={imageUrl(part.images[0].path)} alt="" loading="lazy" /> : <Package size={22} />}
+                            {part.images[0] ? <PartPhoto path={part.images[0].path} alt="" variant="thumbnail" /> : <Package size={22} />}
                           </div>
                           <div>
                             <button className="inventory-part-link" onClick={() => onEdit(part)}>{part.name}</button>
@@ -211,7 +212,7 @@ function InventoryList({ parts, viewerCounts, onNew, onEdit, onRemove, onRefresh
 
 function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: () => void; onSaved: (part: Part) => void }) {
   const [partId] = useState(() => part?.id ?? crypto.randomUUID())
-  const [images, setImages] = useState<DraftImage[]>(() => part?.images.map(image => ({ ...image, id: image.path, url: imageUrl(image.path) })) ?? [])
+  const [images, setImages] = useState<DraftImage[]>(() => part?.images.map(image => ({ ...image, id: image.path })) ?? [])
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [imageError, setImageError] = useState('')
@@ -260,7 +261,7 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
   }
 
   function removeImage(image: DraftImage) {
-    if (objectUrls.current.delete(image.url)) URL.revokeObjectURL(image.url)
+    if (image.file && objectUrls.current.delete(image.url)) URL.revokeObjectURL(image.url)
     setImages(images.filter(item => item.id !== image.id))
     setImageError('')
     setDirty(true)
@@ -365,7 +366,9 @@ function PartEditor({ part, onCancel, onSaved }: { part: Part | null; onCancel: 
                   {images.map((image, index) => (
                     <div key={image.id} className="inventory-photo">
                       <div className="inventory-photo-preview">
-                        <img src={image.url} alt={image.alt} />
+                        {image.file
+                          ? <img src={image.url} alt={image.alt} decoding="async" loading="lazy" />
+                          : <PartPhoto path={image.path} alt={image.alt} variant="card" />}
                         {index === 0 && <span className="inventory-cover-badge">მთავარი</span>}
                       </div>
                       <div className="inventory-photo-controls">
