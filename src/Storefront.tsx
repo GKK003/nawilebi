@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, Grid2X2, PackageOpen, Search, SlidersHorizontal, Wrench, X } from 'lucide-react';
 import { CONDITIONS, formatPrice, partTitle, yearLabel, type Part, type PartCondition } from './catalog';
 import { PartPhoto, StockPill } from './storefront-ui';
+import { partPath } from './store-routes';
+import StoreLink from './StoreLink';
 
 const sortOptions = [
   { value: 'featured', label: 'რჩეული' },
@@ -27,7 +29,7 @@ function sortedUnique(values: (string | null)[]) {
 }
 
 function ProductCard({ part }: { part: Part }) {
-  return <a href={`#part/${part.id}`} className="product-card">
+  return <StoreLink href={partPath(part.id)} className="product-card">
     <div className="card-photo">
       <PartPhoto path={part.images[0]?.path} alt={part.images[0]?.alt || part.name} variant="card" />
       <StockPill quantity={part.quantity} />
@@ -37,7 +39,7 @@ function ProductCard({ part }: { part: Part }) {
       <h3>{partTitle(part)}</h3>
       <div className="card-bottom"><strong className={part.price === null ? 'contact-price' : ''}>{formatPrice(part.price)}</strong><span className="card-arrow" aria-hidden="true"><ArrowRight size={19} /></span></div>
     </div>
-  </a>;
+  </StoreLink>;
 }
 
 export default function Storefront({ parts, loading, error, retry, hidden }: {

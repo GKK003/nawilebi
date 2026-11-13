@@ -3,16 +3,18 @@ import { ArrowUpRight, Mail, MapPin, MessageCircle, PackageOpen, Phone } from 'l
 import type { Part } from './catalog';
 import { stockStatus } from './catalog';
 import { imageUrl, type StoreContact } from './repository';
+import { partPath } from './store-routes';
+import StoreLink from './StoreLink';
 
 const email: string | undefined = import.meta.env.VITE_STORE_EMAIL?.trim();
 const whatsapp: string | undefined = import.meta.env.VITE_STORE_WHATSAPP?.replace(/\D/g, '');
 export const hasContact = (contact: StoreContact) => Boolean(contact.phone || contact.address || contact.map_url || email || whatsapp);
 
 export function Brand() {
-  return <a className="brand" href="#" aria-label="ნაწილები — მთავარი">
+  return <StoreLink className="brand" href="/" aria-label="ნაწილები — მთავარი">
     <img src="/mark.svg" width="42" height="42" alt="" />
     <span><strong>ნაწილები<span>.</span></strong><small>ავტონაწილების კატალოგი</small></span>
-  </a>;
+  </StoreLink>;
 }
 
 export function ContactLinks({ contact, part }: { contact: StoreContact; part?: Part }) {
@@ -20,7 +22,7 @@ export function ContactLinks({ contact, part }: { contact: StoreContact; part?: 
   const mapLink = map_url?.startsWith('https://') ? map_url : address
     ? `https://www.google.com/maps/search/?${new URLSearchParams({ api: '1', query: address })}`
     : null;
-  const note = part ? `გამარჯობა, მაინტერესებს ${part.name}.\n${window.location.href}` : 'გამარჯობა, მაინტერესებს ავტონაწილი.';
+  const note = part ? `გამარჯობა, მაინტერესებს ${part.name}.\n${new URL(partPath(part.id), window.location.origin).href}` : 'გამარჯობა, მაინტერესებს ავტონაწილი.';
   return <div className="contact-links">
     {whatsapp && <a href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(note)}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> WhatsApp <ArrowUpRight size={14} /></a>}
     {phone && <a href={`tel:${phone.replace(/[^+\d]/g, '')}`}><Phone size={16} /> {phone}</a>}
@@ -34,9 +36,9 @@ export function StoreFooter() {
     <div className="shell footer-inner">
       <div><Brand /><p>მოძებნე ნაწილი და გადაამოწმე მარაგი.</p></div>
       <div className="footer-links">
-        <a href="#catalog">კატალოგი</a>
-        <a href="#services">ავტოსერვისი</a>
-        <a href="#admin">ადმინისტრაცია <ArrowUpRight size={15} /></a>
+        <StoreLink href="/#catalog">კატალოგი</StoreLink>
+        <StoreLink href="/#services">ავტოსერვისი</StoreLink>
+        <StoreLink href="/#admin">ადმინისტრაცია <ArrowUpRight size={15} /></StoreLink>
       </div>
     </div>
   </footer>;

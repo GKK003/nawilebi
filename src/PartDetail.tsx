@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowRight, ChevronRight, Eye, Link2, Package, PackageOpen }
 import { CONDITIONS, formatPrice, partTitle, vehicleLabel, yearLabel, type Part } from './catalog';
 import { ContactLinks, hasContact, PartPhoto, StockPill } from './storefront-ui';
 import { recordPartView, type StoreContact } from './repository';
+import { partPath } from './store-routes';
+import StoreLink from './StoreLink';
 
 const viewerFormatter = new Intl.NumberFormat('ka-GE');
 
@@ -11,6 +13,7 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'manual'>('idle');
   const [viewers, setViewers] = useState<number | null>(null);
   const publishedPartId = part?.is_published && !loading && !error ? part.id : null;
+  const shareUrl = publishedPartId ? new URL(partPath(publishedPartId), window.location.origin).href : '';
 
   useEffect(() => {
     if (!publishedPartId) return;
@@ -23,7 +26,7 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
 
   async function copyPartLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(shareUrl);
       setCopyStatus('copied');
     } catch {
       setCopyStatus('manual');
@@ -31,7 +34,7 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
   }
 
   if (!part || loading || error) return <main id="main-content" tabIndex={-1} className="shell detail-page">
-    <a className="back-link" href="#catalog"><ArrowLeft size={17} /> კატალოგში დაბრუნება</a>
+    <StoreLink className="back-link" href="/#catalog"><ArrowLeft size={17} /> კატალოგში დაბრუნება</StoreLink>
     <div className="empty-state" role={error ? 'alert' : undefined}><PackageOpen size={34} /><strong>{loading ? 'იტვირთება…' : error || 'ნაწილი ვერ მოიძებნა'}</strong>{error && <button className="button secondary" onClick={retry}>ხელახლა ცდა</button>}</div>
   </main>;
 
@@ -48,7 +51,7 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
   ].filter(([, value]) => value);
 
   return <main id="main-content" tabIndex={-1} className="shell detail-page">
-    <nav className="breadcrumbs" aria-label="გვერდის მდებარეობა"><a href="#catalog">კატალოგი</a><ChevronRight size={14} /><span>{part.category}</span><ChevronRight size={14} /><span aria-current="page">{part.name}</span></nav>
+    <nav className="breadcrumbs" aria-label="გვერდის მდებარეობა"><StoreLink href="/#catalog">კატალოგი</StoreLink><ChevronRight size={14} /><span>{part.category}</span><ChevronRight size={14} /><span aria-current="page">{part.name}</span></nav>
     <div className="detail-grid">
       <section className="gallery" aria-label="ნაწილის ფოტოები">
         <div className="gallery-main">
@@ -71,7 +74,7 @@ export default function PartDetail({ contact, part, loading, error, retry }: { c
           <button className="button secondary" type="button" onClick={copyPartLink}><Link2 size={17} /> ბმულის კოპირება</button>
         </div>
         <span className="copy-feedback" role="status">{copyStatus === 'copied' && 'ბმული დაკოპირდა'}</span>
-        {copyStatus === 'manual' && <label className="filter-field">დააკოპირე ნაწილის ბმული<input readOnly value={window.location.href} onFocus={(event) => event.target.select()} /></label>}
+        {copyStatus === 'manual' && <label className="filter-field">დააკოპირე ნაწილის ბმული<input readOnly value={shareUrl} onFocus={(event) => event.target.select()} /></label>}
       </section>
     </div>
   </main>;

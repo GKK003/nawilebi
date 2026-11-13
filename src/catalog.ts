@@ -68,11 +68,11 @@ export function stockStatus(quantity: number): { label: string; tone: 'available
   return { label: 'მარაგშია', tone: 'available' };
 }
 
-export function vehicleLabel(part: Part) {
+export function vehicleLabel(part: Pick<Part, 'make' | 'model'>) {
   return [part.make, part.model].filter(Boolean).join(' ');
 }
 
-export function yearLabel({ year_from, year_to }: Part) {
+export function yearLabel({ year_from, year_to }: Pick<Part, 'year_from' | 'year_to'>) {
   if (year_from && year_to && year_from !== year_to) return `${year_from}–${year_to}`;
   if (year_from && year_to) return `${year_from}`;
   if (year_from) return `${year_from} წლიდან`;
@@ -80,6 +80,6 @@ export function yearLabel({ year_from, year_to }: Part) {
   return '';
 }
 
-export function partTitle(part: Part) {
+export function partTitle(part: Pick<Part, 'make' | 'model' | 'year_from' | 'year_to' | 'name'>) {
   return [vehicleLabel(part), yearLabel(part), part.name].filter(Boolean).join(' ');
 }

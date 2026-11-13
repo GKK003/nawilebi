@@ -11,11 +11,23 @@ import { defaultStoreContact, listPublicParts, readStoreContact } from './reposi
 import Services from './Services';
 import Storefront from './Storefront';
 import { Brand, StoreFooter } from './storefront-ui';
+import { partPath, readPartId } from './store-routes';
+import StoreLink, { navigateToStore, storeNavigationEvent } from './StoreLink';
 
 const Admin = lazy(() => import('./Admin'));
 
+function readStoreLocation() {
+  const { pathname, hash, search } = window.location;
+  const legacyId = pathname === '/' && hash.startsWith('#part/') ? readPartId(hash.slice(6)) : '';
+  if (legacyId) {
+    window.history.replaceState(null, '', partPath(legacyId) + search);
+    return { pathname: partPath(legacyId), hash: '' };
+  }
+  return { pathname, hash };
+}
+
 function App() {
-  const [hash, setHash] = useState(window.location.hash);
+  const [{ pathname, hash }, setLocation] = useState(readStoreLocation);
   const [parts, setParts] = useState<Part[]>([]);
   const [contact, setContact] = useState(defaultStoreContact);
   const [loading, setLoading] = useState(true);
@@ -26,13 +38,14 @@ function App() {
   const adminPage = hash === '#admin' || contactSettings || serviceSettings;
   const servicePage = hash === '#services';
   const showParts = !adminPage && !servicePage;
-  const detailId = hash.startsWith('#part/') ? hash.slice(6) : '';
+  const detailId = pathname.match(/^\/part\/([^/]+)\/?$/)?.[1].toLowerCase() ?? '';
   const part = parts.find(({ id }) => id === detailId);
 
   useEffect(() => {
-    const update = () => setHash(window.location.hash);
-    window.addEventListener('hashchange', update);
-    return () => window.removeEventListener('hashchange', update);
+    const update = () => setLocation(readStoreLocation());
+    const events = ['hashchange', 'popstate', storeNavigationEvent];
+    events.forEach((event) => window.addEventListener(event, update));
+    return () => events.forEach((event) => window.removeEventListener(event, update));
   }, []);
 
   useEffect(() => {
@@ -56,8 +69,10 @@ function App() {
   useEffect(() => {
     if (adminPage) document.title = 'ადმინისტრაცია — ნაწილები';
     else if (servicePage) document.title = 'ავტოსერვისი — ნაწილები';
-    else document.title = part ? `${partTitle(part)} — ნაწილები` : 'ნაწილები — ავტონაწილების კატალოგი';
-  }, [adminPage, part, servicePage]);
+    else if (part) document.title = `${partTitle(part)} — ნაწილები`;
+    else if (!detailId) document.title = 'ნაწილები — ავტონაწილების კატალოგი';
+    else if (!loading) document.title = error || 'ნაწილი ვერ მოიძებნა';
+  }, [adminPage, detailId, error, loading, part, servicePage]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -66,10 +81,10 @@ function App() {
       else window.scrollTo(0, 0);
     });
     return () => cancelAnimationFrame(frame);
-  }, [hash]);
+  }, [hash, pathname]);
 
   function focusSearch() {
-    if (detailId || window.location.hash !== '#catalog') window.location.hash = 'catalog';
+    navigateToStore('/#catalog');
     const search = document.getElementById('catalog-search');
     requestAnimationFrame(() => {
       search?.focus({ preventScroll: true });
@@ -100,11 +115,11 @@ function App() {
       <div className="shell nav-inner">
         <Brand />
         <nav className="nav-links" aria-label="მთავარი ნავიგაცია">
-          <a className={!detailId && !servicePage && hash !== '#catalog' ? 'active' : ''} href="#">მთავარი</a>
-          <a className={hash === '#catalog' || detailId ? 'active' : ''} href="#catalog">კატალოგი</a>
-          <a className={servicePage ? 'active' : ''} aria-current={servicePage ? 'page' : undefined} href="#services">ავტოსერვისი</a>
+          <StoreLink className={!detailId && !servicePage && hash !== '#catalog' ? 'active' : ''} href="/">მთავარი</StoreLink>
+          <StoreLink className={hash === '#catalog' || detailId ? 'active' : ''} href="/#catalog">კატალოგი</StoreLink>
+          <StoreLink className={servicePage ? 'active' : ''} aria-current={servicePage ? 'page' : undefined} href="/#services">ავტოსერვისი</StoreLink>
         </nav>
-        <div className="nav-actions"><button className="icon-button nav-search" aria-label="ნაწილის ძებნა" onClick={focusSearch}><Search size={20} /></button><a className="admin-link" href="#admin" aria-label="ადმინისტრაცია"><span>ადმინისტრაცია</span><ArrowUpRight size={17} /></a></div>
+        <div className="nav-actions"><button className="icon-button nav-search" aria-label="ნაწილის ძებნა" onClick={focusSearch}><Search size={20} /></button><StoreLink className="admin-link" href="/#admin" aria-label="ადმინისტრაცია"><span>ადმინისტრაცია</span><ArrowUpRight size={17} /></StoreLink></div>
       </div>
     </header>
     <Storefront parts={parts} loading={loading} error={error} retry={retry} hidden={Boolean(detailId) || servicePage} />

@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:vercel",
   "images": {
     "sizes": [96, 160, 320, 480, 640, 960, 1280],
     "qualities": [75],
