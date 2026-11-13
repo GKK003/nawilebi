@@ -113,7 +113,8 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .product-card:hover { box-shadow: 0 12px 25px #1c306211; border-color: #b5c3eb; }
 .card-photo { position: relative; aspect-ratio: 4 / 3; background: #edf0f6; overflow: hidden; }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; }
-.service-media > img { position: absolute; inset: 0; object-fit: contain; }
+.service-media:has(> img) { aspect-ratio: auto; }
+.service-media > img { height: auto; aspect-ratio: auto 4 / 3; }
 .card-photo .stock-pill { position: absolute; top: 11px; left: 11px; }
 .stock-pill { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 5px 9px; border-radius: 20px; font-size: 10px; font-weight: 750; white-space: nowrap; }
 .stock-pill > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
